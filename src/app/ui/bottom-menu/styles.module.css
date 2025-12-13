@@ -1,0 +1,18 @@
+.menu {
+	display: flex;
+	position: absolute;
+	bottom: 8px;
+	left: 8px;
+	gap: 4px;
+	user-select: none;
+
+	@media print {
+		display: none;
+	}
+
+	& > * {
+		height: 20px !important;
+		padding-right: 8px !important;
+		padding-left: 8px !important;
+	}
+}

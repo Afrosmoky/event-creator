@@ -1,0 +1,253 @@
+import { on, onMount, untrack, createMemo, createEffect } from 'solid-js';
+
+import type { BaseState, BaseCanvasProps, WithRotationState } from '@/app/state';
+import { useCanvasState } from '@/app/context';
+import { CANVAS_FOCUS_ID } from '@/app/constants';
+import { mutate, setAttributeForwawrd } from '@/app/utils';
+import { MoveController, ResizeController } from '@/app/controllers';
+
+import type { SpritesMap } from '@/sprite.gen.ts';
+import { getIconMeta } from '@/components/Icon';
+
+export interface IconState extends BaseState, WithRotationState {
+  kind: 'icon';
+  config: {
+    size: number;
+    icon: SpritesMap['sprite'];
+  };
+}
+
+export interface IconProps extends BaseCanvasProps<IconState> {}
+
+export function Icon(props: IconProps) {
+  const store = untrack(() => props.store);
+  const zoomController = untrack(() => props.zoomController);
+  const context = useCanvasState();
+  context.isDragging = true;
+
+  let startAngle = 0;
+  let initialAngle = 0;
+
+    const moveController = new MoveController(
+        zoomController,
+
+        // 1️⃣ MOVE HANDLER (przesuwanie)
+        (x, y) => {
+            const clampedX = Math.max(0, x);
+            const clampedY = Math.max(0, y);
+            mutate(store, { x: clampedX, y: clampedY });
+        },
+
+        // 2️⃣ POINTER DOWN / START MOVE
+        () => {
+            // Ustaw focus dla UI
+            context.uiFocus = store;
+
+            // Ustaw focus dla drag
+            context.dragFocus = store;
+        },
+
+        // 3️⃣ POINTER UP
+        () => {
+            // wywołujemy hook jeśli istnieje
+            store.upHook?.();
+
+            // zakończ drag
+            context.dragFocus = null;
+        }
+    );
+
+  const resizeController = new ResizeController<{
+    icon: SVGUseElement;
+    anchor: SVGGElement;
+    stick: SVGGElement;
+  }>(
+    zoomController,
+    {},
+      // @ts-ignore
+    (reload, event, element, zoom, deltaX, deltaY, storage) => {
+      if (element === storage.stick) {
+        if (!event) return;
+
+        const bbox = storage.icon.getBoundingClientRect();
+        const cx = bbox.left + bbox.width / 2;
+        const cy = bbox.top + bbox.height / 2;
+
+        const dx = event.clientX - cx;
+        const dy = event.clientY - cy;
+
+        const currentAngle = Math.atan2(dy, dx);
+        const delta = currentAngle - startAngle;
+
+        let degrees = (initialAngle + delta) * (180 / Math.PI);
+        if (degrees < 0) degrees += 360;
+
+        store.angle = degrees;
+        return;
+      }
+
+      const angleInRadians = (store.angle ?? 0) * (Math.PI / 180);
+
+      // Obrót delta w przeciwną stronę — zgodnie z kierunkiem wizualnym
+      const rotatedDeltaX = deltaX * Math.cos(angleInRadians) + deltaY * Math.sin(angleInRadians);
+
+
+      let newWidth = setAttributeForwawrd(
+        storage.icon,
+        'width',
+        current => {
+          const calculatedWidth = reload ? store.config.size : +(current ?? 0) + rotatedDeltaX;
+          return Math.max(calculatedWidth, 40); // Minimalna szerokość to 40 pikseli
+        },
+      );
+      
+      let newHeight = newWidth;
+      
+      newWidth = Math.max(newWidth, 40); // Minimalna szerokość to 40 pikseli
+      newHeight = Math.max(newHeight, 40); // Minimalna wysokość to 40 pikseli
+      
+      if (!reload) {
+        storage.icon.setAttribute('width', '' + newWidth);
+        storage.icon.setAttribute('height', '' + newHeight);
+        store.config.size = newWidth;
+      }
+      store.angleOriginX = newWidth / 2;
+    },
+  );
+
+  createEffect(() => moveController.move(store.x, store.y));
+
+  createEffect(on(
+    () => store.config.size,
+    () => resizeController.reload(),
+  ));
+
+  onMount(() => {
+    store.startMoving = e => {
+      moveController.startMoving(e);
+    };
+  });
+
+  const meta = createMemo(() => getIconMeta(`sprite/${store.config.icon}`));
+
+  return (
+    <g
+        on:pointerup={async e => {
+            // @ts-ignore
+            (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+            context.isDragging = false;
+            // @ts-ignore
+            console.log("POINTERUP for ID:", store.id);
+            // @ts-ignore
+            console.log("FOCUS AT UP:", context.dragFocus?.id);
+
+            const el = context.dragFocus; // ← ZAWSZE poprawny obiekt
+            if (el) {
+                // @ts-ignore
+                console.log("[UPDATING] sending PUT for id", el.id);
+                await context.focusAndUpdateElement(el);
+            }
+
+            context.dragFocus = null;
+            moveController.handlePointerUp(e);
+        }}
+        on:pointerdown={e => {
+            // @ts-ignore
+            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+            context.isDragging = true;
+            // @ts-ignore
+            console.log("POINTERDOWN on ID:", store.id);
+            context.dragFocus = store;
+            context.uiFocus = store;
+            // @ts-ignore
+            console.log("CURRENT FOCUS:", context.dragFocus.id);
+            moveController.handlePointerDown(e)
+        }}
+      ref={ref => moveController.ref = ref}
+        id={context.dragFocus ? CANVAS_FOCUS_ID : undefined}
+      data-kind={'icon' satisfies typeof store.kind}
+    >
+      <g
+        style={{
+          transform: `rotate(${store.angle}deg)`,
+          'transform-origin': `${store.config.size / 2}px ${store.config.size / 2}px`,
+        }}
+      >
+        <use
+          href={`/${meta()?.filePath}#${meta()?.iconName}`}
+          ref={ref => resizeController.storage.icon = ref}
+          width={store.config.size}
+          height={store.config.size}
+        />
+
+        {/* Rotation handle */}
+        <g
+          ref={ref => resizeController.storage.stick = ref}
+          transform={`translate(-11.5, -11.5)`}
+          on:pointerup={async e => {
+
+              resizeController.handlePointerUp(e);
+              // @ts-ignore
+              if (el) {
+                  // @ts-ignore
+                  console.log("[UPDATING] sending PUT for id", el.id);
+                  // @ts-ignore
+                  await context.focusAndUpdateElement(el);
+              }
+
+              context.dragFocus = null;
+          }}
+          on:pointerdown={e => {
+            const bbox = resizeController.storage.icon?.getBoundingClientRect();
+            if (!bbox) return;
+
+            const cx = bbox.left + bbox.width / 2;
+            const cy = bbox.top + bbox.height / 2;
+
+            const dx = e.clientX - cx;
+            const dy = e.clientY - cy;
+
+            context.dragFocus = store;
+
+            startAngle = Math.atan2(dy, dx);
+            initialAngle = (store.angle || 0) * (Math.PI / 180);
+
+            resizeController.handlePointerDown(e);
+          }}
+        >
+          <circle fill='#666666' cx='11.5' cy='11.5' r='11.5' />
+          <circle fill='#FFFFFF' cx='11.5' cy='11.5' r='5.75' />
+        </g>
+
+        {/* Resize handle */}
+        <g
+          ref={ref => resizeController.storage.anchor = ref}
+          transform={`translate(${store.config.size - 11.5}, ${store.config.size + 11.5})`}
+          on:pointerup={async e => {
+              resizeController.handlePointerUp(e);
+              const el = context.dragFocus;
+              if (el) await context.focusAndUpdateElement(el);
+              context.dragFocus = null;
+          }}
+          on:pointerdown={e => {
+              context.dragFocus = store;
+              //console.log(resizeController.storage.anchor);
+              // Tutaj zapis scrolowania elementu
+              resizeController.handlePointerDown(e)
+          }}
+        >
+          <g transform='rotate(300)'>
+            <circle fill='#666666' cx='11.5' cy='11.5' r='11.5' />
+            <path
+              d='M18,11.5772265 C18,11.3035963 17.8970903,11.062158 17.6912709,10.8529114 L17.0654685,10.2493154 C16.8540864,10.0454341 16.6009842,9.94349348 16.3061617,9.94349348 C16.0057766,9.94349348 15.7554557,10.0454341 15.555199,10.2493154 L13.1020539,12.6073636 L13.1020539,6.94160967 C13.1020539,6.66261421 12.9977535,6.4359304 12.7891528,6.26155824 C12.580552,6.08718608 12.3288404,6 12.034018,6 L10.965982,6 C10.6711596,6 10.419448,6.08718608 10.2108472,6.26155824 C10.0022465,6.4359304 9.89794608,6.66261421 9.89794608,6.94160967 L9.89794608,12.6073636 L7.44480103,10.2493154 C7.24454429,10.0454341 6.99422336,9.94349348 6.69383825,9.94349348 C6.39345315,9.94349348 6.14313222,10.0454341 5.94287548,10.2493154 L5.31707317,10.8529114 C5.10569106,11.0567927 5,11.298231 5,11.5772265 C5,11.8615873 5.10569106,12.1057083 5.31707317,12.3095896 L10.7490372,17.5488023 C10.9437313,17.7473183 11.1940522,17.8465763 11.5,17.8465763 C11.8003851,17.8465763 12.0534874,17.7473183 12.2593068,17.5488023 L17.6912709,12.3095896 C17.8970903,12.100343 18,11.856222 18,11.5772265 Z'
+              fill='#FFFFFF'
+              fill-rule='nonzero'
+            />
+          </g>
+        </g>
+      </g>
+    </g>
+  );
+}
+
+export * from './panel.tsx';
