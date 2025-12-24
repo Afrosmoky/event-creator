@@ -154,7 +154,6 @@ export function calculateTopDotPositions(
 	if (totalDots === 0) return [];
 
 	const positions: [x: number, y: number][] = [];
-	// @ts-expect-error
 	const verticalSideDots = Math.floor((height / perimeter) * totalDots);
 	const horizontalSideDots = Math.floor((width / perimeter) * totalDots);
 

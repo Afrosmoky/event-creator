@@ -74,7 +74,7 @@ switch (item) {
         };
     default:
         // @ts-ignore
-        const { width, height } = SPRITES_META.sprite.items[item];
+        const { width, height } = SPRITES_META[item];
         // @ts-ignore
         return {
             ...common,

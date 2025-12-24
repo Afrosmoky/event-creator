@@ -2,7 +2,6 @@ import { For, untrack } from 'solid-js';
 import { isWebKit } from '@solid-primitives/platform';
 // @ts-ignore
 import { apiQuery } from '../../../../api/apiQuery';
-import type { SpritesMap } from '@/sprite.gen';
 import type { AnyState } from '@/app/elements';
 import type { ZoomController } from '@/app/controllers';
 import { Icon } from '@/components/Icon';
@@ -65,7 +64,7 @@ export function AddItemMenu(props: AddItemMenuProps) {
     });
   }
 
-  function generateState(item: SpritesMap['sprite'], e: PointerEvent): AnyState {
+  function generateState(item: keyof typeof SPRITES_META, e: PointerEvent): AnyState {
     // compute canvas-local coordinates using zoomController
     const x = (e.clientX - (zoomController.panX ?? 0)) / (zoomController.zoom ?? 1);
     const y = (e.clientY - (zoomController.panY ?? 0)) / (zoomController.zoom ?? 1);
@@ -151,7 +150,8 @@ export function AddItemMenu(props: AddItemMenuProps) {
         } as AnyState;
       case 'row-of-chairs': return { ...common, kind: 'chairs', seats: 30, config: { width: 256 }, angle: 0, angleOriginX: 0, angleOriginY: 0, spacing: 40 };
       default:
-        const { width, height } = SPRITES_META.sprite.items[item];
+        // @ts-ignore
+        const { width, height } = SPRITES_META[item];
         return {
           ...common,
           kind: 'icon',
@@ -167,7 +167,7 @@ export function AddItemMenu(props: AddItemMenuProps) {
 
   return (
     <div class="grid grid-cols-3 overflow-x-hidden overflow-y-scroll scrollbar-hidden h-[400px] [&>*>svg]:w-available [&>*>svg]:aspect-square [&>*]:text-center border-t-1 border-l-1 [&>*]:border-b-1 [&>*]:border-r-1 [&>*]:p-3 [&>*]:text-sm">
-      <For each={Object.keys(SPRITES_META.sprite.items) as SpritesMap['sprite'][]}>
+      <For each={Object.keys(SPRITES_META) as (keyof typeof SPRITES_META)[]}>
         {(item) => {
           const dragController = new DragController(async (e) => {
             const tempId = `temp-${Date.now()}`;
@@ -248,7 +248,7 @@ export function AddItemMenu(props: AddItemMenuProps) {
               <div class="text-wrap flex justify-center">
                 {iconTranslations[item] || item}
               </div>
-              <Icon name={`sprite/${item}`} />
+              <Icon name={item} />
             </div>
           );
         }}

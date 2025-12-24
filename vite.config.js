@@ -4,18 +4,21 @@ import { URL, fileURLToPath } from 'node:url';
 import Solid from 'vite-plugin-solid';
 import NeodxSVG from '@neodx/svg/vite';
 import Inspect from 'vite-plugin-inspect';
+import solidSvg from 'vite-plugin-solid-svg';
 import TailwindCSS from '@tailwindcss/vite';
 
 import { patchCssModules as PatchCssModules } from 'vite-css-modules';
 import { optimizeCssModules as OptimizeCssModules } from 'vite-plugin-optimize-css-modules';
+import path from 'node:path';
 
 export default defineConfig({
+        base: '/svg-editor/',
         plugins: [
                 PatchCssModules({
                         exportMode: 'named',
                         generateSourceTypes: true,
                 }),
-                NeodxSVG({
+                /*NeodxSVG({
                         root: 'assets',
                         output: 'public',
                         group: true,
@@ -27,10 +30,13 @@ export default defineConfig({
                                         viewBox: true,
                                 },
                         },
-                }),
+                }),*/
                 OptimizeCssModules(),
                 TailwindCSS(),
                 Solid(),
+                solidSvg({
+                        defaultAsComponent: false
+                }),
                 Inspect(),
         ],
         css: {
@@ -59,7 +65,8 @@ export default defineConfig({
         },
         resolve: {
                 alias: {
-                        '@': fileURLToPath(new URL('./src', import.meta.url)),
+                        '@': path.resolve(__dirname, './src'),
+                        '@/assets/': path.resolve(__dirname, './assets')
                 },
         },
         server: {

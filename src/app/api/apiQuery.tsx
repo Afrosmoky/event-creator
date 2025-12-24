@@ -13,6 +13,7 @@ export interface ApiQueryOptions {
 export function apiQuery<T = unknown>(
   options: ApiQueryOptions | Accessor<ApiQueryOptions>
 ) {
+  console.log(`Will be quering with ballrom ${(options as any).id}`)
   const fetcher = async (opts: ApiQueryOptions): Promise<T> => {
     const endpointTemplate = API_ENDPOINTS[opts.route].endpoint;
 

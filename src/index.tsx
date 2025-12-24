@@ -7,7 +7,7 @@ document.getElementById('spa-loader')!.outerHTML = '';
 render(
   () => (
     <Router>
-      <Route path="/:id" component={Root} />
+      <Route path="/svg-editor" component={Root} />
     </Router>
   ),
   document.body

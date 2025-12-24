@@ -6,14 +6,13 @@ import { CANVAS_FOCUS_ID } from '@/app/constants';
 import { mutate, setAttributeForwawrd } from '@/app/utils';
 import { MoveController, ResizeController } from '@/app/controllers';
 
-import type { SpritesMap } from '@/sprite.gen.ts';
-import { getIconMeta } from '@/components/Icon';
+import { SPRITES_META } from '@/sprite.gen.ts';
 
 export interface IconState extends BaseState, WithRotationState {
   kind: 'icon';
   config: {
     size: number;
-    icon: SpritesMap['sprite'];
+    icon: keyof typeof SPRITES_META
   };
 }
 
@@ -128,7 +127,7 @@ export function Icon(props: IconProps) {
     };
   });
 
-  const meta = createMemo(() => getIconMeta(`sprite/${store.config.icon}`));
+  const meta = createMemo(() => SPRITES_META[store.config.icon]);
 
   return (
     <g
@@ -174,7 +173,7 @@ export function Icon(props: IconProps) {
         }}
       >
         <use
-          href={`/${meta()?.filePath}#${meta()?.iconName}`}
+          href={`/assets/${store.config.icon}.svg`}
           ref={ref => resizeController.storage.icon = ref}
           width={store.config.size}
           height={store.config.size}
