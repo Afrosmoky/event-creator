@@ -9,10 +9,11 @@ export function isEnumObject(value: unknown): value is Record<string, string | n
   );
 }
 
-export type PropertyDescriptor<TType = "string" | "number" | "color" | "icon" | EnumLike> = {
+export type PropertyDescriptor<TType = "string" | "number" | "bool" | "color" | "icon" | EnumLike | PropertiesDescriptor> = {
     type: TType,
     name: string,
     is_int?: boolean,
+    is_array?: boolean,
     default?: ResolveDescriptorType<TType>,
     min?: number,
     hide_in_inspector?: boolean
@@ -25,6 +26,7 @@ export type PropertiesDescriptor = {
 type ResolveDescriptorType<T> =
     T extends "string" ? string :
     T extends "number" ? number :
+    T extends "bool" ? boolean :
     T extends "color" ? string :
     T extends "icon" ? string :
     T extends EnumLike ? EnumValues<T> :
@@ -44,7 +46,7 @@ function createTypeProps<T extends PropertiesDescriptor>(def: T) {
         } else if(descriptor.type === "string") {
             descriptor.default = descriptor.default ?? "";
         } else if(descriptor.type === "color") {
-            descriptor.default = descriptor.default ?? "#aaaaaa";
+            descriptor.default = descriptor.default ?? "";
         } else {
             descriptor.default = descriptor.default ?? "";
         }
@@ -109,27 +111,65 @@ export function createSvgItemFromBlueprint<T extends PropertiesDescriptor>(
     return item;
 }
 
+export function cloneSvgItem(original: SvgItem) {
+    let copy = deepCloneObj(original);
+    
+    copy.id = nonce++;
+    copy.last_update = Date.now();
+
+    return copy;
+}
+
+function deepCloneObj<T extends object>(obj: T): T {
+    if(typeof obj !== 'object') {
+        return obj;
+    }
+
+    let copy: any = {};
+
+    for(const key in obj) {
+        const value = obj[key];
+
+        if(typeof value === 'object') {
+            if(Array.isArray(value)) {
+                copy[key] = [
+                    ...value.map(o => deepCloneObj(o))
+                ];
+            } else {
+                copy[key] = deepCloneObj(value);
+            }
+        } else {
+            copy[key] = value;
+        }
+    }
+
+    return copy;
+}
+
 export enum SvgItemType {
     TABLE_CIRCLE = "TABLE_CIRCLE",
     TABLE_RECT = "TABLE_RECT",
     TABLE_T = "TABLE_T",
     TABLE_U = "TABLE_U",
+    TABLE_SEAT = "TABLE_SEAT",
     ICON = "ICON"
 }
 
-export class SvgItem<Props = Record<string, any>> {
-    constructor(
-        public id: number,
-        public kind: string = SvgItemType.TABLE_T,
-        public x: number = 0,
-        public y: number = 0,
-        public w: number = 100,
-        public h: number = 100,
-        public angle: number = 0,
-        public props: Props
-    ) {}
+export interface SvgItem<Props = Record<string, any>> {
+    id: number;
+    kind: string;
 
-    public last_update = Date.now();
+    parent?: SvgItem;
+
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+
+    angle: number;
+    props: Props;
+
+    last_update: number;
 }
 
 export enum SvgItemTableType {
@@ -163,10 +203,15 @@ export const SvgItemTablePropsDef = createTypeProps({
         default: 45,
         min: 40
     },
+    "show_unseated": {
+        type: "bool",
+        name: "prop_show_unseated",
+        default: true
+    },
     "color": {
         type: "color",
         name: "prop_bg_color",
-        default: "#aaaaaa"
+        default: "#fdd994"
     }
 });
 
@@ -175,6 +220,36 @@ export type SvgItemTableProps = PropsFromDescriptor<typeof SvgItemTablePropsDef>
 export function isSvgItemTable(item: SvgItem<any>): item is SvgItem<SvgItemTableProps> {
     return item.kind.startsWith("TABLE_");
 }
+
+export const SvgItemTableSeatPropsDef = createTypeProps({
+    "guest_id": {
+        type: "string",
+        name: "guest_id",
+        default: null
+    },
+    "index": {
+        type: "number",
+        name: "index",
+        default: 0
+    },
+    "radius": {
+        type: "number",
+        name: "radius",
+        default: 21
+    },
+    "table_angle": {
+        type: "number",
+        name: "table_angle",
+        default: 0
+    }
+});
+
+export type SvgItemTableSeatProps = PropsFromDescriptor<typeof SvgItemTableSeatPropsDef>;
+
+export function isSvgItemTableSeat(item: SvgItem<any>): item is SvgItem<SvgItemTableSeatProps> {
+    return item.kind == SvgItemType.TABLE_SEAT;
+}
+
 
 export function isSvgItemTableRect(item: SvgItem<SvgItemTableProps>) {
     return item.kind === "TABLE_RECT";
@@ -234,6 +309,12 @@ export const SvgItemTableCirclePropsDef = createTypeProps({
     }
 });
 
+export type SvgItemTableCircleProps = PropsFromDescriptor<typeof SvgItemTableCirclePropsDef>;
+
+export function isSvgItemTableCircle(item: SvgItem<SvgItemTableProps>): item is SvgItem<SvgItemTableCircleProps> {
+    return item.kind === "TABLE_CIRCLE";
+}
+
 export const SvgItemIconPropsDef = createTypeProps({
     "icon": {
         type: "icon",
@@ -268,6 +349,10 @@ export const SvgItems = {
     TABLE_CIRCLE: {
         type: "TABLE_CIRCLE",
         props: SvgItemTablePropsDef
+    },
+    TABLE_SEAT: {
+        type: SvgItemType.TABLE_SEAT,
+        props: SvgItemTableSeatPropsDef,
     },
     ICON: {
         type: "ICON",

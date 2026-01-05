@@ -2,7 +2,7 @@ import { createEffect, createSignal, For, onCleanup, onMount, Show } from 'solid
 import { SvgItemFactory } from './SvgItemFactory';
 import { createStore } from 'solid-js/store';
 import { useSvgDrawerContext } from '@/app/context/SvgDrawerContext';
-import { SvgItemInspector } from './SvgItemInspector';
+import { SvgItemFocus } from './SvgItemFocus';
 import { createResizeObserver } from '@solid-primitives/resize-observer';
 
 export function SvgDrawer(
@@ -71,8 +71,6 @@ export function SvgDrawer(
         const target = e.currentTarget as SVGSVGElement;
         if (!target.hasPointerCapture(e.pointerId)) return;
 
-        e.stopPropagation();
-
         const deltaX = e.clientX - lastMouseX;
         const deltaY = e.clientY - lastMouseY;
 
@@ -85,8 +83,6 @@ export function SvgDrawer(
 
     function onPointerUp(e: PointerEvent) {
         const target = e.currentTarget as SVGSVGElement;
-
-        e.stopPropagation();
         target.releasePointerCapture(e.pointerId);
     }
 
@@ -136,15 +132,10 @@ export function SvgDrawer(
                     <line x1="0" y1="-10000" x2="0" y2="10000" stroke="lightgray" stroke-width={Math.max(Math.min(1 * context.zoom(), 1), 0.2)} />
                     <line x1="-10000" y1="0" x2="10000" y2="0" stroke="lightgray" stroke-width={Math.max(Math.min(1 * context.zoom(), 1), 0.2)} />
 
-                    <For each={Object.keys(context.items)}>
-                        {key => {
-                            const item = context.items[key];
-                            if(!item) {
-                                return;
-                            }
-                            
+                    <For each={context.itemsArray}>
+                        {item => {
                             return (
-                                <SvgItemFactory item={item!} />
+                                <SvgItemFactory item={item} />
                             );
                         }}
                     </For>
@@ -154,7 +145,7 @@ export function SvgDrawer(
             <svg class="absolute top-0 left-0 pointer-events-none" width="100%" height="100%">
                 <g transform={`translate(${context.panX() + state.clientWidth / 2}, ${context.panY() + state.clientHeight / 2}) scale(${context.zoom()})`}>
                     <Show when={context.focusedItemIndex() != -1}>
-                        <SvgItemInspector item={context.items[context.focusedItemIndex()]!} />
+                        <SvgItemFocus item={context.items[context.focusedItemIndex()]!} />
                     </Show>
                 </g>
             </svg>

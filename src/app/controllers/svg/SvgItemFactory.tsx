@@ -1,9 +1,10 @@
 import { createSignal, Match, Switch } from "solid-js";
-import type { SvgItem } from "./SvgItem";
+import { SvgItemType, type SvgItem } from "./SvgItem";
 import { SvgItemTable } from "./SvgItemTable";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItemIcon } from "./SvgItemIcon";
 import { SvgItemTableCircle } from "./SvgItemTableCircle";
+import { SvgItemTableSeat } from "./SvgItemTableSeat";
 
 export interface SvgItemFactoryProps {
     item: SvgItem<any>;
@@ -57,10 +58,10 @@ export function SvgItemFactory(
         target.releasePointerCapture(e.pointerId);
     }
 
-    function onFocus(e: FocusEvent) {
+    /*function onFocus(e: FocusEvent) {
         e.stopPropagation();
         context.setFocusedItemIndex(props.item.id);
-    }
+    }*/
 
     return (
         <g
@@ -70,7 +71,7 @@ export function SvgItemFactory(
             `}
            
             tabIndex={0}
-            on:focusin={onFocus}
+            //on:focusin={onFocus}
             on:pointerdown={onContainerPointerDown}
             on:pointermove={onContainerPointerMove}
             on:pointerup={onContainerPointerUp}
@@ -87,6 +88,9 @@ export function SvgItemFactory(
                     </Match>
                     <Match when={props.item.kind === "ICON"}>
                         <SvgItemIcon item={props.item}/>
+                    </Match>
+                    <Match when={props.item.kind == SvgItemType.TABLE_SEAT}>
+                        <SvgItemTableSeat item={props.item}/>
                     </Match>
                     <Match when={true}>
                         <div>Unknown item kind</div>

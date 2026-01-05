@@ -1,13 +1,12 @@
 import { createSignal } from 'solid-js';
 import { API_ENDPOINTS } from './apiEndpoints';
-import type { ApiKeysType } from './apiEndpoints';
 
 const BASE_URL = 'https://afrosmoky.vps.webdock.cloud/api';
 
 type Method = 'POST' | 'PUT' | 'DELETE';
 
 interface MutationOptions {
-  route: ApiKeysType;
+  route: any;
   method: Method;
   id?: string;
 }

@@ -14,11 +14,11 @@ import path from 'node:path';
 export default defineConfig({
         base: '/svg-editor/',
         plugins: [
-                PatchCssModules({
+                /*PatchCssModules({
                         exportMode: 'named',
                         generateSourceTypes: true,
                 }),
-                /*NeodxSVG({
+                NeodxSVG({
                         root: 'assets',
                         output: 'public',
                         group: true,
@@ -30,8 +30,8 @@ export default defineConfig({
                                         viewBox: true,
                                 },
                         },
-                }),*/
-                OptimizeCssModules(),
+                }),
+                OptimizeCssModules(),*/
                 TailwindCSS(),
                 Solid(),
                 solidSvg({
@@ -39,11 +39,11 @@ export default defineConfig({
                 }),
                 Inspect(),
         ],
-        css: {
+        /*css: {
                 modules: {
                         localsConvention: 'camelCaseOnly',
                 },
-        },
+        },*/
         build: {
                 minify: false,
                 cssMinify: false,

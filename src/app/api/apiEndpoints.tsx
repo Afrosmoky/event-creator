@@ -39,31 +39,51 @@ export interface ItemAPIType {
 }
 
 export interface GuestAPIType {
+  id: number;
   guest_id: string,
   element_id: string,
   ballroom_id: string,
+  name: string,
+  surname: string,
   seated: boolean,
   group: string,
   age_group: string,
   gender: string,
   menu: string,
-  parameters: {
+  note: string,
+
+  parameters?: {
     dietary_preference: string
   }
 }
 
-export type ApiKeysType =
-| 'GUEST'
-| 'GET_ELEMENTS'
-| "ADD_ELEMENTS"
-| 'UPDATE_ELEMENT'
-| 'DELETE_ELEMENT'
-;
-export const API_ENDPOINTS: {[key in ApiKeysType]:ApiEndpointsType} = {
+export interface SeatAPIType {
+  id: number;
+  index: number;
+  element_id: number;
+  guest_id: string;
+  ballroom_id: string;
+  label: string;
+  created_at: string;
+  updated_at: string;
+}
 
- GUEST : {
+export const API_ENDPOINTS = {
+  GUEST : {
     endpoint: '/guest/getlist/:id',
     method: ['GET'],
+  },
+  GET_SEATS: {
+    endpoint: '/ballroom/:id/getSeats',
+    method: ['GET']
+  },
+  PUT_SEAT: {
+    endpoint: '/seat/:id',
+    method: ['PUT']
+  },
+  DELETE_SEAT: {
+    endpoint: '/seat/:id/:index',
+    method: ['DELETE']
   },
   GET_ELEMENTS : {
     endpoint: '/element/ballroom/:id',
@@ -80,8 +100,7 @@ export const API_ENDPOINTS: {[key in ApiKeysType]:ApiEndpointsType} = {
   DELETE_ELEMENT : {
     endpoint: '/element/:id',
     method: ['DELETE'],
-  },
-
+  }
 };
 
 

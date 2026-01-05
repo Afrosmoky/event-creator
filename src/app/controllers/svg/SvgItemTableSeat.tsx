@@ -1,39 +1,226 @@
+import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps } from "./SvgItem";
+import { createEffect, createMemo, createSignal, Match, Show, Switch } from "solid-js";
+import { CircleUserRound } from "lucide-solid";
+import { createDroppable } from "@thisbeyond/solid-dnd";
+
 interface SvgItemTableSeatComponentProps {
-    x: number;
-    y: number;
-    radius: number;
-    angle: number;
-    text?: string;
+    item: SvgItem<SvgItemTableSeatProps>;
 }
 
 export function SvgItemTableSeat(
     props: SvgItemTableSeatComponentProps
 ) {
+    let guestNameTextDOM: SVGTextElement;
+    let meassureTextDOM: SVGTextElement;
+
+    const baseNameTextSize = 12;
+
+    const context = useSvgDrawerContext();
+    const seatedGuest = createMemo(() => {
+        for(const seated of context.seats) {
+            if(seated.table_id === props.item.parent?.id && seated.seat_index === props.item.props.index) {
+                return context.guests.find(o => o.guest_id === seated.guest_id);
+            }
+        }
+
+        return null;
+    });
+    const [nameFontSize, setNameFontSize] = createSignal(baseNameTextSize);
+    const parentTable = createMemo(() => context.items[props.item.parent?.id]);
+    const item = props.item;
+
+    const [isHover, setIsHover] = createSignal(false);
+
+    function onContentClick(event: PointerEvent) {
+        event.stopPropagation();
+
+        context.setFocusedItemIndex(props.item.id);
+    }
+
+    function onPointerUp(event: PointerEvent) {
+        const guest = context.guests.find(o => o.id === context.draggingGuest());
+        if(!guest) {
+            return;
+        }
+
+        context.seatGuest(guest.guest_id, props.item.parent.id, props.item.props.index);
+    }
+
+    createEffect(() => {
+        if(seatedGuest()?.name && meassureTextDOM) {
+            const textLength = meassureTextDOM.getComputedTextLength();
+
+            const path = document.querySelector("#seat_guest_text_arc") as SVGPathElement;
+            if(path) {
+                const pathLength = path.getTotalLength();
+
+                if(textLength > pathLength) {
+                    const scalar = pathLength / textLength;
+                    setNameFontSize(baseNameTextSize * scalar);
+                } else {
+                    setNameFontSize(baseNameTextSize);
+                }
+            } else {
+                console.warn("Can't find path for seat text!");
+            }
+        }
+    });
+
+    const SeatedIndicator = () => {
+        return (
+            <>
+                <defs>
+                    <path 
+                        id="seat_guest_text_arc"
+                        fill="none"
+                        stroke="red"
+                        d={`M 0, ${-0} a ${item.props.radius * 2} ${item.props.radius * 2} 0 0 1 ${item.props.radius * 2} 0`}
+                    />
+                </defs>
+                <circle
+                    cx={props.item.props.radius}
+                    cy={props.item.props.radius}
+                    r={props.item.props.radius}
+                    fill-opacity="0"
+                />
+
+                <CircleUserRound 
+                    x={0} 
+                    y={0} 
+                    width={props.item.props.radius * 2} 
+                    height={props.item.props.radius * 2} 
+                    stroke="var(--color-foreground)"
+                />
+
+                <text
+                    ref={meassureTextDOM}
+                    font-size={baseNameTextSize.toString()}
+                    font-weight="regular"
+
+                    visibility="hidden"
+                >
+                    {seatedGuest().name}
+                </text>
+
+
+                <text
+                    ref={guestNameTextDOM}
+                    font-size={nameFontSize().toString()}
+                    font-weight="regular"
+                    text-anchor="middle"
+                    
+                    fill="var(--color-foreground)"
+                >
+                    <textPath 
+                        startOffset="50%"
+                        href="#seat_guest_text_arc"
+                    >
+                        {seatedGuest().name}
+                    </textPath>
+                </text>
+            </>
+        )
+    };
+
+    const UnseatedIndicator = () => {
+        return (
+            <>
+                <circle
+                    cx={props.item.props.radius}
+                    cy={props.item.props.radius}
+                    r={props.item.props.radius}
+                    fill="var(--color-primary-soft)"
+                    fill-opacity="0.2"
+                    stroke="var(--color-black)"
+                    stroke-width={isHover() && context.draggingGuest() != -1 ? 0 : 1}
+                    
+                    stroke-dasharray="4 2"
+                ></circle>
+                <text
+                    x={props.item.props.radius}
+                    y={props.item.props.radius + 4}
+                    font-size="12"
+                    text-anchor="middle"
+                    fill="var(--color-foreground)"
+                >
+                    {(props.item.props.index + 1).toString()}
+                </text>
+            </>
+        )
+    }
+
+    const GuestOverIndicator = () => {
+        return (
+            <>
+                <circle 
+                    cx={props.item.props.radius}
+                    cy={props.item.props.radius}
+                    r={props.item.props.radius}
+
+                    stroke="var(--color-accent)"
+                    stroke-width={4}
+                    stroke-dasharray="6 4"
+                    fill="var(--color-primary-soft)"
+                    fill-opacity={0.2}
+                >
+                    <animate
+                        attributeName="stroke-dashoffset"
+                        from="20"
+                        to="0"
+                        dur="1s"
+                        repeatCount="indefinite"
+                    />
+                </circle>
+            </>
+        )
+    }
+    
     return (
-        <g 
-            transform={`
-                translate(${props.x} ${props.y})
-                rotate(${-props.angle})
-                translate(${-props.x} ${-(props.y)})
-            `}
-        >
-            <circle
-                cx={props.x}
-                cy={props.y}
-                r={props.radius}
-                fill="white"
-                stroke="black"
-                stroke-dasharray="4 2"
-            ></circle>
-            <text
-                x={props.x}
-                y={props.y + 4}
-                font-size="12"
-                text-anchor="middle"
-                fill="black"
-            >
-                {props.text ?? ""}
-            </text>
-        </g>
+        <Switch>
+            <Match when={parentTable().props.show_unseated || seatedGuest()}>
+                <g 
+                    transform={`
+                        translate(${props.item.parent?.x} ${props.item.parent?.y})
+                        rotate(${props.item.parent?.angle} ${-props.item.x + props.item.props.radius} ${-props.item.y + props.item.props.radius})
+                    ` + (seatedGuest() 
+                        ? `rotate(${props.item.props.table_angle} ${props.item.props.radius} ${props.item.props.radius})` 
+                        : `rotate(${-props.item.parent?.angle} ${props.item.props.radius} ${props.item.props.radius})`)}
+
+                    on:pointerdown={onContentClick}
+                    on:pointerenter={() => setIsHover(true)}
+                    on:pointerleave={() => setIsHover(false)}
+                    on:pointerup={onPointerUp}
+                >
+                    <Switch>
+                        <Match when={seatedGuest()}>
+                            <SeatedIndicator />
+                        </Match>
+                        <Match when={!seatedGuest()}>
+                            <UnseatedIndicator />
+                        </Match>
+                    </Switch>
+                    <Show when={isHover() && context.draggingGuest() != -1}>
+                        <GuestOverIndicator />
+                    </Show>
+                </g>
+            </Match>
+            <Match when={true}>
+                <g 
+                    transform={`
+                        translate(${props.item.parent?.x} ${props.item.parent?.y})
+                        rotate(${props.item.parent?.angle} ${-props.item.x + props.item.props.radius} ${-props.item.y + props.item.props.radius})
+                    `}
+                >
+                    <circle
+                        cx={props.item.props.radius}
+                        cy={props.item.props.radius}
+                        r={8}
+                        fill="var(--color-primary-soft)"
+                        fill-opacity="0.8"
+                    ></circle>
+                </g>
+            </Match>
+        </Switch>
     )
 }

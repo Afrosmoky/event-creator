@@ -1,6 +1,6 @@
-import { createEffect, createMemo, For } from "solid-js";
-import { isSvgItemTableT, isSvgItemTableU, SvgItem, type SvgItemTableProps } from "./SvgItem";
-import { createStore, produce } from "solid-js/store";
+import { batch, createEffect, createMemo, For, untrack } from "solid-js";
+import { createSvgItemFromBlueprint, isSvgItemTableT, isSvgItemTableU, SvgItem, SvgItems, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
+import { createStore, produce, unwrap } from "solid-js/store";
 import { SideParams, SvgItemTableRectGenerator, SvgItemTableTGenerator, SvgItemTableUGenerator, type GeneratorReturn, type Point } from "./SvgItemTableGenerators";
 import { SvgItemTableSeat } from "./SvgItemTableSeat";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
@@ -21,7 +21,7 @@ export function SvgItemTable(
 
     const canvas = useSvgDrawerContext();
     const [state, setState] = createStore({
-        seats: [] as Seat[],
+        seats: [] as SvgItem<SvgItemTableSeatProps>[],
         points: [] as Point[],
         sides: {} as SideParams
     });
@@ -36,12 +36,10 @@ export function SvgItemTable(
         }
     });
 
-    calculatePoints();
-
     createEffect(() => {
         const desiredSeats = calculateMaxSeats();
 
-        queueMicrotask(() => {
+        untrack(() => {
             if(desiredSeats != item.props.seats) {
                 canvas.modifyItem(item.id, {
                     props: {
@@ -53,39 +51,25 @@ export function SvgItemTable(
     });
 
     createEffect(() => {
-        item.props.seats;
+        item.props.seats, item.props.seat_spacing, item.props.seat_radius;
 
-        queueMicrotask(() => {
-            
+        untrack(() => {
+            const clampedSeats = Math.max(0, item.props.seats);
+            const clampedSpacing = Math.max(40, item.props.seat_spacing);
+
+            canvas.modifyItem(item.id, {
+                props: {
+                    seats: clampedSeats,
+                    seat_radius: 20,
+                    seat_spacing: clampedSpacing
+                }
+            })
         })
     })
 
     createEffect(() => {
         calculatePoints();
     });
-
-    /*function calculateTotalLength() {
-        let total = 0;
-
-        for(let i = 0; i < state.points.length; ++i) {
-            const p0 = state.points[i];
-            const p1 = state.points[(i + 1) % state.points.length];
-            const params = {
-                seat_start_padding: 0,
-                seat_end_padding: 0,
-                ...(state.sides[i] || {})
-            };
-
-            let dx = p1.x - p0.x;
-            let dy = p1.y - p0.y;
-            let length = Math.sqrt(dx * dx + dy * dy);
-
-            length -= params.seat_end_padding + params.seat_start_padding;
-            total += length;
-        }
-
-        return total;
-    }*/
 
     function calculateMaxSeats() {
         let seats = 0;
@@ -131,7 +115,7 @@ export function SvgItemTable(
             throw new Error("No generator for table!");
         }
 
-        const seats: Seat[] = [];
+        const seats: SvgItem<SvgItemTableSeatProps>[] = [];
 
         for(let i = 0; i < points.length; ++i) {
             const p0 = points[i];
@@ -162,31 +146,68 @@ export function SvgItemTable(
             const stepX = dx / count;
             const stepY = dy / count;
 
-            const perpX = dy / length;
-            const perpY = -dx / length;
+            const perpX = ny;
+            const perpY = -nx;
 
             for (let j = 0; j < count; j++) {
                 const seatX = p0.x + params.seat_start_padding * nx + perpX * (item.props.seat_radius + 4) + stepX * (j + 0.5);
                 const seatY = p0.y + params.seat_start_padding * ny + perpY * (item.props.seat_radius + 4) + stepY * (j + 0.5);
 
-                seats.push({ x: seatX, y: seatY });
+                const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT, (item.id + 1) * 1000 + seats.length);
+                seat.parent = item;
+                seat.x = seatX - item.w / 2;
+                seat.y = seatY - item.h / 2;
+                seat.w = 42;
+                seat.h = 42;
+                seat.props.table_angle = Math.atan2(-perpY, -perpX) * 180 / Math.PI - 90;
+                seat.props.radius = item.props.seat_radius;
+                seat.props.index = seats.length;
+
+                seats.push(seat);
             }
         }
 
-        setState(produce(state => {
-            state.seats = seats;
-            state.sides = sides;
-            state.points = points;
-        }));
+        untrack(() => {
+            const oldSeats = state.seats;
+            for(const seat of oldSeats) {
+                canvas.removeItem(seat.id, false);
+            }
+
+            for(const seat of seats) {
+                canvas.addItem(seat.id, seat, false);
+            }
+
+            setState(produce(state => {
+                state.seats = seats;
+                state.sides = sides;
+                state.points = points;
+            }));
+        });
+    }
+
+    function onPointerUp(event: PointerEvent) {
+        const group = canvas.draggingGroup();
+        if(!group) {
+            return;
+        }
+
+        batch(() => {
+            canvas.unseatTable(props.item.id);
+
+            const guests = canvas.guests.filter(o => o.group === group);
+            for(let i = 0; i < guests.length; ++i) {
+                canvas.seatGuest(guests[i].guest_id, props.item.id, i);
+            }
+        });
     }
 
     return (
         <>
             <polygon 
                 fill={item.props?.color || "#aaaaaa"}
-                stroke="black"
                 points={state.points.map(p => `${p.x},${p.y}`).join(" ")}
-            ></polygon>
+                on:pointerup={onPointerUp}
+            />
 
             <text
                 x={item.w / 2}
@@ -195,17 +216,6 @@ export function SvgItemTable(
             >
                 {item.props.name}
             </text>
-
-            <For each={state.seats}>
-                {(seat, seatIndex) => (
-                    <SvgItemTableSeat 
-                        x={seat.x} y={seat.y} 
-                        radius={item.props.seat_radius} 
-                        angle={item.angle} 
-                        text={(seatIndex() + 1).toFixed(0)} 
-                    />
-                )}
-            </For>
         </>
     )
 }

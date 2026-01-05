@@ -2,6 +2,7 @@ export const dict = {
     add_element: "Add Element",
     export: "Export",
     guests: "Guests",
+    elements: "Elements",
     export_svg: "Export to SVG",
     export_png: "Export to PNG",
     category_tables: "Tables",

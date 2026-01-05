@@ -1,12 +1,11 @@
 import { createResource } from 'solid-js';
 import type { Accessor } from 'solid-js';
 import { API_ENDPOINTS } from './apiEndpoints';
-import type { ApiKeysType } from './apiEndpoints';
 
 const BASE_URL = 'https://afrosmoky.vps.webdock.cloud/api';
 
 export interface ApiQueryOptions {
-  route: ApiKeysType;
+  route: any;
   id?: string;
 }
 
@@ -44,14 +43,6 @@ export function apiQuery<T = unknown>(
   const source: Accessor<ApiQueryOptions> =
     typeof options === 'function' ? options : () => options;
 
-  // const [data, { refetch }] = createResource<ApiQueryOptions, T>(
-  //   source,
-  //   fetcher,
-  //   {
-  //     initialValue: null as unknown as T,
-  //     deferStream: true,
-  //   }
-  // );
   const [data, { refetch }] = createResource(source, fetcher);
 
   return { data, refetch };

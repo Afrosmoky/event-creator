@@ -4,7 +4,7 @@ import { I18nContextProvider } from './app/context/I18nContext';
 
 export function Root() {
 	return (
-		<main class='w-screen h-screen'>
+		<main class='relative w-screen h-screen overflow-hidden'>
 			<I18nContextProvider>
 				<SvgDrawerContextProvider>
 					<App />
