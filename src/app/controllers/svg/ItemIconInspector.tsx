@@ -68,20 +68,14 @@ export default function ItemIconInspector(
                             type="number"
                             value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
                         />
+                    </div>
 
-                        <PropertyInput 
+                    <PropertyInput 
                             title="prop_width"
                             type="number"
                             min={64}
                             value={[props.item.w, (value) => context.modifyItem(props.item.id, { w: value }) ]}
                         />
-                        <PropertyInput 
-                            title="prop_height"
-                            type="number"
-                            min={64}
-                            value={[props.item.h, (value) => context.modifyItem(props.item.id, { h: value }) ]}
-                        />
-                    </div>
                     
                     <PropertyInput 
                         title="prop_angle"

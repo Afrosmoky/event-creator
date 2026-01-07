@@ -90,7 +90,7 @@ export function SvgItemTableSeat(
                     y={0} 
                     width={props.item.props.radius * 2} 
                     height={props.item.props.radius * 2} 
-                    stroke="var(--color-foreground)"
+                    stroke="black"
                 />
 
                 <text
@@ -110,7 +110,7 @@ export function SvgItemTableSeat(
                     font-weight="regular"
                     text-anchor="middle"
                     
-                    fill="var(--color-foreground)"
+                    fill="#2E2A26"
                 >
                     <textPath 
                         startOffset="50%"
@@ -130,9 +130,9 @@ export function SvgItemTableSeat(
                     cx={props.item.props.radius}
                     cy={props.item.props.radius}
                     r={props.item.props.radius}
-                    fill="var(--color-primary-soft)"
+                    fill="#FAF1EF"
                     fill-opacity="0.2"
-                    stroke="var(--color-black)"
+                    stroke="black"
                     stroke-width={isHover() && context.draggingGuest() != -1 ? 0 : 1}
                     
                     stroke-dasharray="4 2"
@@ -142,7 +142,7 @@ export function SvgItemTableSeat(
                     y={props.item.props.radius + 4}
                     font-size="12"
                     text-anchor="middle"
-                    fill="var(--color-foreground)"
+                    fill="#2E2A26"
                 >
                     {(props.item.props.index + 1).toString()}
                 </text>
@@ -158,10 +158,10 @@ export function SvgItemTableSeat(
                     cy={props.item.props.radius}
                     r={props.item.props.radius}
 
-                    stroke="var(--color-accent)"
+                    stroke="#C6A96A"
                     stroke-width={4}
                     stroke-dasharray="6 4"
-                    fill="var(--color-primary-soft)"
+                    fill="#FAF1EF"
                     fill-opacity={0.2}
                 >
                     <animate
@@ -215,8 +215,8 @@ export function SvgItemTableSeat(
                     <circle
                         cx={props.item.props.radius}
                         cy={props.item.props.radius}
-                        r={8}
-                        fill="var(--color-primary-soft)"
+                        r={4}
+                        fill="#FAF1EF"
                         fill-opacity="0.8"
                     ></circle>
                 </g>

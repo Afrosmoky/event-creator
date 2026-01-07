@@ -7,7 +7,8 @@ export interface Point {
 
 export interface SideParam {
     seat_start_padding?: number,
-    seat_end_padding?: number
+    seat_end_padding?: number,
+    match_seats?: number
 }
 
 export interface SideParams {
@@ -47,16 +48,16 @@ export function SvgItemTableTGenerator(item: SvgItem<SvgItemTableTProps>): Gener
 
     const params: SideParams = {
         2: {
-            seat_end_padding: props.seat_radius * 2 + 6
+            seat_end_padding: props.seat_radius * 2
         },
         3: {
-            seat_start_padding: 4
+            seat_start_padding: props.seat_radius * 2
         },
         5: {
-            seat_end_padding: 4
+            seat_end_padding: props.seat_radius * 2
         },
         6: {
-            seat_start_padding: props.seat_radius * 2 + 6
+            seat_start_padding: props.seat_radius * 2
         }
     };
 
@@ -81,14 +82,14 @@ export function SvgItemTableUGenerator(item: SvgItem<SvgItemTableUProps>): Gener
 
     const params: SideParams = {
         1: {
-            seat_end_padding: props.seat_radius * 2 + 6
+            seat_end_padding: props.seat_radius * 2
         },
         2: {
-            seat_start_padding: 4,
-            seat_end_padding: 4
+            seat_start_padding: props.seat_radius * 2,
+            seat_end_padding: props.seat_radius * 2
         },
         3: {
-            seat_start_padding: props.seat_radius * 2 + 6
+            seat_start_padding: props.seat_radius * 2
         }
     };
 

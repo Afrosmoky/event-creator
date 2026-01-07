@@ -1,6 +1,7 @@
+import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import type { SvgItem, SvgItemIconProps } from "./SvgItem";
 
-import { createEffect, createMemo, createSignal, Match, Switch, type ValidComponent } from "solid-js";
+import { createEffect, createMemo, createSignal, Match, Switch, untrack, type ValidComponent } from "solid-js";
 import type { JSX } from "solid-js/jsx-runtime";
 import { Dynamic } from "solid-js/web";
 
@@ -43,6 +44,18 @@ export function SvgIcon(
 export function SvgItemIcon(
     props: SvgItemIconComponentProps
 ) {
+    const context = useSvgDrawerContext();
+
+    createEffect(() => {
+        props.item.w;
+
+        untrack(() => {
+            context.modifyItem(props.item.id, {
+                h: props.item.w
+            });
+        });
+    });
+
     return (
         <g>
             <rect width={props.item.w} height={props.item.h} fill="none" pointer-events="all"></rect>

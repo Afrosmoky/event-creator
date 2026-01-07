@@ -1,17 +1,11 @@
 import { batch, createEffect, createMemo, For, untrack } from "solid-js";
-import { createSvgItemFromBlueprint, isSvgItemTableT, isSvgItemTableU, SvgItem, SvgItems, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
+import { createSvgItemFromBlueprint, isSvgItemTableT, isSvgItemTableU, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SvgItem, SvgItems, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
 import { createStore, produce, unwrap } from "solid-js/store";
 import { SideParams, SvgItemTableRectGenerator, SvgItemTableTGenerator, SvgItemTableUGenerator, type GeneratorReturn, type Point } from "./SvgItemTableGenerators";
-import { SvgItemTableSeat } from "./SvgItemTableSeat";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 
 interface SvgItemTableComponentProps {
     item: SvgItem<SvgItemTableProps>;
-}
-
-interface Seat {
-    x: number;
-    y: number;
 }
 
 export function SvgItemTable(
@@ -37,41 +31,70 @@ export function SvgItemTable(
     });
 
     createEffect(() => {
-        const desiredSeats = calculateMaxSeats();
-
-        untrack(() => {
-            if(desiredSeats != item.props.seats) {
-                canvas.modifyItem(item.id, {
-                    props: {
-                        seats: desiredSeats
-                    }
-                });
-            }
-        });
+        updatePoints();
     });
 
     createEffect(() => {
-        item.props.seats, item.props.seat_spacing, item.props.seat_radius;
+        item.props.seat_spacing; state.points;
 
         untrack(() => {
-            const clampedSeats = Math.max(0, item.props.seats);
-            const clampedSpacing = Math.max(40, item.props.seat_spacing);
-
-            canvas.modifyItem(item.id, {
+            const seats = calculateSeatsForSpacing(item.props.seat_spacing);
+            canvas.modifyItem(props.item.id, {
                 props: {
-                    seats: clampedSeats,
-                    seat_radius: 20,
-                    seat_spacing: clampedSpacing
+                    seats: seats
+                }
+            })
+        })
+    });
+
+    createEffect(() => {
+        const preferredSeats = item.props.preferred_seats;
+        if(preferredSeats == -1) {
+            return;
+        }
+
+        untrack(() => {
+            const maxSeats = calculateSeatsForSpacing(MIN_SEAT_SPACING);
+            const minSeats = calculateSeatsForSpacing(MAX_SEAT_SPACING);
+
+            if(preferredSeats < minSeats || preferredSeats > maxSeats) {
+                return;
+            }
+
+            const dir = preferredSeats < item.props.seats ? 1 : -1;
+            let result = calculateNextSeats(item.props.seat_spacing, dir);
+            
+            canvas.modifyItem(props.item.id, {
+                props: {
+                    seat_spacing: result.spacing
                 }
             })
         })
     })
 
     createEffect(() => {
-        calculatePoints();
+        batch(() => {
+            updateSeats();
+        });
     });
 
-    function calculateMaxSeats() {
+    function calculateNextSeats(spacing: number, dir: -1 | 1) {
+        const currentSeats = calculateSeatsForSpacing(spacing);
+
+        while(true) {
+            spacing += dir;
+
+            const nextSeats = calculateSeatsForSpacing(spacing);
+            if(currentSeats != nextSeats) {
+                return {
+                    spacing: spacing,
+                    seats: nextSeats
+                };
+            }
+        }
+    }
+
+    function calculateSeatsForSpacing(spacing: number) {
         let seats = 0;
 
         for(let i = 0; i < state.points.length; ++i) {
@@ -88,14 +111,18 @@ export function SvgItemTable(
             let length = Math.sqrt(dx * dx + dy * dy);
             length -= params.seat_end_padding + params.seat_start_padding;
 
-            const maxSeats = Math.floor(length / item.props.seat_spacing);
+            let maxSeats = Math.floor(length / spacing);
+            if(maxSeats === 0) {
+                maxSeats = length >= MIN_SEAT_SPACING ? 1 : 0;
+            }
+            
             seats += maxSeats;
         }
 
         return seats;
     }
 
-    function calculatePoints() {
+    function updatePoints() {
         let result: GeneratorReturn;
 
         if(isSvgItemTableT(props.item)) {
@@ -111,10 +138,16 @@ export function SvgItemTable(
         }
 
         const [points, sides] = result;
-        if(!points) {
-            throw new Error("No generator for table!");
-        }
+        untrack(() => {
+            setState(produce(state => {
+                state.points = points;
+                state.sides = sides;
+            }));
+        })
+    }
 
+    function updateSeats() {
+        const { points, sides } = state;
         const seats: SvgItem<SvgItemTableSeatProps>[] = [];
 
         for(let i = 0; i < points.length; ++i) {
@@ -138,9 +171,9 @@ export function SvgItemTable(
             dx = nx * length;
             dy = ny * length;
 
-            const count = Math.floor(length / (item.props.seat_spacing));
+            let count = Math.floor(length / (item.props.seat_spacing));
             if(count === 0) {
-                continue;
+                count = length >= MIN_SEAT_SPACING ? 1 : 0;
             }
 
             const stepX = dx / count;
@@ -179,8 +212,6 @@ export function SvgItemTable(
 
             setState(produce(state => {
                 state.seats = seats;
-                state.sides = sides;
-                state.points = points;
             }));
         });
     }

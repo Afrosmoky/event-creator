@@ -213,6 +213,8 @@ export const makeSvgDrawerContext = () => {
     const [seatsMap, setSeatsMap] = createStore<{ [id: string]: SeatClient }>({});
     const [patches, setPatches] = createStore<Patch[]>([]);
     const [seatPatches, setSeatPatches] = createStore<SeatPatch[]>([]);
+    const [clientWidth, setClientWidth] = createSignal(0);
+    const [clientHeight, setClientHeight] = createSignal(0);
 
     const [guestPatches, setGuestPatches] = createStore<GuestPatch[]>([]);
     
@@ -499,7 +501,10 @@ export const makeSvgDrawerContext = () => {
         modifyItem,
         removeItem,
 
-        guestPatches, modifyGuestNote
+        guestPatches, modifyGuestNote,
+
+        clientWidth, setClientWidth,
+        clientHeight, setClientHeight
     };
 }
 

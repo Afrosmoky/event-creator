@@ -1,9 +1,9 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { createMemo, Match, Show, Switch } from "solid-js";
-import { cloneSvgItem, SvgItem, SvgItemTableProps } from "./SvgItem";
+import { Match, Switch } from "solid-js";
+import { cloneSvgItem, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SvgItem, SvgItemTableProps, SvgItemType } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
 import { CopyIcon, EyeIcon, EyeOffIcon, Trash2Icon, UnlinkIcon } from "lucide-solid";
-import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
+import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle } from "./InspectorPresets";
 import PropertyInput from "./PropertyInput";
 
 interface ItemTableInspectorProps {
@@ -13,7 +13,6 @@ interface ItemTableInspectorProps {
 export default function ItemTableInspector(
     props: ItemTableInspectorProps
 ) {
-
     const i18n = useI18nContext();
     const context = useSvgDrawerContext();
 
@@ -45,6 +44,22 @@ export default function ItemTableInspector(
         })
     }
 
+    function onSeatsUpdate(value: number) {
+        context.modifyItem(props.item.id, {
+            props: {
+                preferred_seats: value
+            }
+        }, false);
+    }
+
+    function onSpacingUpdate(value: number) {
+        context.modifyItem(props.item.id, {
+            props: {
+                seat_spacing: value
+            }
+        });
+    }
+
     return (
         <>
             <InspectorCategory>
@@ -67,7 +82,7 @@ export default function ItemTableInspector(
                         min={0}
                         value={[
                             props.item.props.seats,
-                            value => context.modifyItem(props.item.id, { props: { seats: value }})
+                            value => onSeatsUpdate(value)
                         ]}
                     />
 
@@ -75,11 +90,11 @@ export default function ItemTableInspector(
                         title="Rozstaw miejsc"
                         type="number"
                         theme="slider"
-                        min={42}
-                        max={126}
+                        min={MIN_SEAT_SPACING}
+                        max={MAX_SEAT_SPACING}
                         value={[
                             props.item.props.seat_spacing,
-                            value => context.modifyItem(props.item.id, { props: { seat_spacing: value }})
+                            value => onSpacingUpdate(value)
                         ]}
                     />
                 </InspectorCategoryContent>
@@ -103,15 +118,13 @@ export default function ItemTableInspector(
                     </div>
                     
                     <Switch>
-                        <Match when={props.item.kind === "TABLE_CIRCLE"}>
+                        <Match when={props.item.kind === SvgItemType.TABLE_CIRCLE}>
                             <PropertyInput
                                 title="prop_radius"
                                 type="number"
                                 min={1}
-                                value={[props.item.w, (value) => context.modifyItem(props.item.id, {
-                                    w: value,
-                                    h: value
-                                })]}
+                                // @ts-ignore
+                                value={[props.item.w / 2, (value) => context.modifyItem(props.item.id, { w: value * 2 })]}
                             />
                         </Match>
                         <Match when={true}>
@@ -127,6 +140,45 @@ export default function ItemTableInspector(
                                     type="number"
                                     min={64}
                                     value={[props.item.h, (value) => context.modifyItem(props.item.id, { h: value }) ]}
+                                />
+                            </div>
+                        </Match>
+                    </Switch>
+
+                    <Switch>
+                        <Match when={props.item.kind === SvgItemType.TABLE_U}>
+                            <div class="grid grid-cols-2 gap-3">
+                                <PropertyInput 
+                                    title="Szerokość ramion"
+                                    type="number"
+                                    min={32}
+                                    // @ts-ignore
+                                    value={[props.item.props.arms_width, (value) => context.modifyItem(props.item.id, { props: { arms_width: value } }) ]}
+                                />
+                                <PropertyInput 
+                                    title="Szerokość dołu"
+                                    type="number"
+                                    min={32}
+                                    // @ts-ignore
+                                    value={[props.item.props.bottom_height, (value) => context.modifyItem(props.item.id, { props: { bottom_height: value } }) ]}
+                                />
+                            </div>
+                        </Match>
+                        <Match when={props.item.kind === SvgItemType.TABLE_T}>
+                            <div class="grid grid-cols-2 gap-3">
+                                <PropertyInput 
+                                    title="Szerokość góry"
+                                    type="number"
+                                    min={32}
+                                    // @ts-ignore
+                                    value={[props.item.props.top_height, (value) => context.modifyItem(props.item.id, { props: { top_height: value } }) ]}
+                                />
+                                <PropertyInput 
+                                    title="Szerokość dołu"
+                                    type="number"
+                                    min={32}
+                                    // @ts-ignore
+                                    value={[props.item.props.middle_width, (value) => context.modifyItem(props.item.id, { props: { middle_width: value } }) ]}
                                 />
                             </div>
                         </Match>

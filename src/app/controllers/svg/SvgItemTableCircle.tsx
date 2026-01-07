@@ -1,11 +1,10 @@
-import { batch, createEffect, createMemo, For, untrack } from "solid-js";
-import { createSvgItemFromBlueprint, SvgItem, SvgItems, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
+import { batch, createEffect, createMemo, createSignal, For, onCleanup, untrack } from "solid-js";
+import { clamp, createSvgItemFromBlueprint, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SEAT_RADIUS, SvgItem, SvgItems, SvgItemTableCircleProps, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
 import { createStore } from "solid-js/store";
-import { SvgItemTableSeat } from "./SvgItemTableSeat";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 
 interface SvgItemTableCircleComponentProps {
-    item: SvgItem<SvgItemTableProps>;
+    item: SvgItem<SvgItemTableCircleProps>;
 }
 
 export function SvgItemTableCircle(
@@ -14,81 +13,109 @@ export function SvgItemTableCircle(
     const canvas = useSvgDrawerContext();
     const [state, setState] = createStore({
         seats: [] as SvgItem<SvgItemTableSeatProps>[],
-        radius: createMemo(() => Math.min(props.item.w, props.item.h) / 2)
+        radius: createMemo(() => props.item.w / 2)
+    });
+
+    onCleanup(() => {
+        batch(() => {
+            for(const seat of state.seats) {
+                canvas.removeItem(seat.id, false);
+            }
+        })
+    })
+
+    createEffect(() => {
+        const currentSeatRadius = props.item.props.seat_radius;
+
+        untrack(() => {
+            if(currentSeatRadius != SEAT_RADIUS) {
+                canvas.modifyItem(props.item.id, {
+                    props: {
+                        seat_radius: SEAT_RADIUS
+                    }
+                });
+            }
+        })
     });
 
     createEffect(() => {
-        const radius = state.radius();
+        const width = props.item.w;
+
+        untrack(() => {
+            const clamped = Math.max(64, width);
+
+            if(clamped != width) {
+                canvas.modifyItem(props.item.id, {
+                    w: clamped
+                });
+            }
+        })
+    })
+
+    createEffect(() => {
+        props.item.w;
 
         untrack(() => {
             canvas.modifyItem(props.item.id, {
+                h: props.item.w
+            })
+        })
+    })
+
+    createEffect(() => {
+        const spacing = props.item.props.seat_spacing;
+        state.radius();
+
+        untrack(() => {
+            const length = calculateLength();
+            const seats = Math.floor(length / spacing);
+
+            canvas.modifyItem(props.item.id, {
                 props: {
-                    radius: radius
+                    seats: clampSeats(seats)
+                }
+            })
+        });
+    });
+
+    createEffect(() => {
+        let preferredSeats = props.item.props.preferred_seats;
+        if(preferredSeats == -1) {
+            return;
+        }
+
+        untrack(() => {
+            preferredSeats = clampSeats(preferredSeats);
+
+            const length = calculateLength();
+            const spacing = length / preferredSeats;
+
+            canvas.modifyItem(props.item.id, {
+                props: {
+                    seat_spacing: spacing
                 }
             });
         });
     })
 
     createEffect(() => {
-        const length = calculateTotalLength();
-        const desiredSeats = Math.floor(length / props.item.props.seat_spacing);
-
-        untrack(() => {
-            if(desiredSeats != props.item.props.seats) {
-                canvas.modifyItem(props.item.id, {
-                    props: {
-                        seats: desiredSeats
-                    }
-                });
-            }
-        });
-    });
-
-    createEffect(() => {
-        props.item.props.seat_spacing, props.item.props.seat_radius;
-
-        untrack(() => {
-            const clampedSpacing = Math.max(40, props.item.props.seat_spacing);
-
-            canvas.modifyItem(props.item.id, {
-                props: {
-                    seat_radius: 20,
-                    seat_spacing: clampedSpacing
-                }
-            })
-        })
-    });
-
-    createEffect(() => {
-        props.item.props.seats; props.item.props.seat_spacing;
-
-        untrack(() => {
-            const length = calculateTotalLength();
-            const maxSeats = Math.floor(length / props.item.props.seat_spacing);
-            console.log(`Max seats: ${maxSeats}, Current seats: ${props.item.props.seats}`)
-
-            if(props.item.props.seats > maxSeats) {
-                canvas.modifyItem(props.item.id, {
-                    props: {
-                        seats: maxSeats
-                    }
-                });
-            } else if(props.item.props.seats < 0) {
-                canvas.modifyItem(props.item.id, {
-                    props: {
-                        seats: 0
-                    }
-                });
-            }
-        })
-    })
-
-    createEffect(() => {
         calculatePoints();
     });
 
-    function calculateTotalLength() {
-        const r = state.radius() + props.item.props.seat_radius + 8;
+    function clampSeats(value: number) {
+        const length = calculateLength();
+        const maxSeats = Math.floor(length / MIN_SEAT_SPACING);
+        const minSeats = Math.ceil(length / MAX_SEAT_SPACING);
+
+        return clamp(value, minSeats, maxSeats);
+    }
+
+    function getOuterRadius() {
+        return state.radius() + props.item.props.seat_radius + 8;
+    }
+
+    function calculateLength() {
+        const r = getOuterRadius();
         const l = r * 2 * Math.PI;
 
         return l;
@@ -110,8 +137,8 @@ export function SvgItemTableCircle(
             seat.parent = props.item;
             seat.x = x;
             seat.y = y;
-            seat.w = 42;
-            seat.h = 42;
+            seat.w = SEAT_RADIUS * 2;
+            seat.h = SEAT_RADIUS * 2;
             seat.props.table_angle = angle + 90;
             seat.props.radius = props.item.props.seat_radius;
             seat.props.index = seats.length;
@@ -120,14 +147,17 @@ export function SvgItemTableCircle(
         }
 
         untrack(() => {
-            const oldSeats = state.seats;
-            for(const seat of oldSeats) {
-                canvas.removeItem(seat.id, false);
-            }
+            batch(() => {
+                const oldSeats = state.seats;
+                for(const seat of oldSeats) {
+                    canvas.removeItem(seat.id, false);
+                }
 
-            for(const seat of seats) {
-                canvas.addItem(seat.id, seat, false);
-            }
+                for(const seat of seats) {
+                    canvas.addItem(seat.id, seat, false);
+                }
+            })
+            
 
             setState("seats", seats);
         });
@@ -153,15 +183,15 @@ export function SvgItemTableCircle(
         <>
             <circle 
                 fill={props.item.props?.color || "var(--color-primary-soft)"}
-                cx={props.item.w / 2}
-                cy={props.item.h / 2}
+                cx={state.radius()}
+                cy={state.radius()}
                 r={state.radius()}
                 on:pointerup={onPointerUp}
             ></circle>
 
             <text
-                x={props.item.w / 2}
-                y={props.item.h / 2 + 6}
+                x={state.radius()}
+                y={state.radius() + 6}
                 text-anchor="middle"
             >
                 {props.item.props.name}

@@ -1,7 +1,6 @@
-import { RotateCw } from "lucide-solid";
-import { SvgItemType, type SvgItem } from "./SvgItem";
+import { ArrowDownIcon, ArrowRightIcon, RotateCw } from "lucide-solid";
+import { isSvgItemTableCircle, SvgItemType, type SvgItem } from "./SvgItem";
 import { createMemo, Match, Show, Switch } from "solid-js";
-import { createStore } from "solid-js/store";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 
 interface PaddingType {
@@ -26,92 +25,56 @@ export function SvgItemFocus(
     const width = createMemo(() => props.item.w);
     const height = createMemo(() => props.item.h);
 
-    let lastMouseX = 0, lastMouseY = 0;
-
     function onResizeHandlePointerDown(e: PointerEvent) {
         const target = e.target as SVGCircleElement;
 
         e.stopPropagation();
         e.preventDefault();
         target.setPointerCapture(e.pointerId);
-
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
     }
 
-    function onResizeTableCircle() {
-
-    }
-
-    function onResizeHandlePointerMove(e: PointerEvent, type: "LT" | "RT" | "LB" | "RB") {
+    function onResizeHandlePointerMove(e: PointerEvent, type: "W" | "H") {
         const target = e.target as SVGCircleElement;
         if (!target.hasPointerCapture(e.pointerId)) return;
 
         e.stopPropagation();
 
-        const deltaX = (e.clientX - lastMouseX) / context.zoom();
-        const deltaY = -(e.clientY - lastMouseY) / context.zoom();
+        const worldX = e.clientX - context.clientWidth() / 2 - context.panX();
+        const worldY = e.clientY - context.clientHeight() / 2 - context.panY();
 
-        if(deltaX == 0 && deltaY == 0) {
-            return;
+        const zoom = context.zoom();
+
+        const px = worldX / zoom;
+        const py = worldY / zoom;
+
+        const dx = px - props.item.x;
+        const dy = py - props.item.y;
+
+        // undo rotation
+        const angle = -props.item.angle * Math.PI / 180;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+
+        const localX = dx * cos - dy * sin;
+        const localY = dx * sin + dy * cos;
+
+        let newW = props.item.w;
+        let newH = props.item.h;
+
+        if (type === "W") {
+            newW = Math.max(1, Math.floor(Math.abs(localX) * 2));
         }
 
-        const rad = props.item.angle * Math.PI / 180;
-        const cos = Math.cos(rad);
-        const sin = Math.sin(rad);
-
-        const isInContext = context.items[props.item.id];
-        if(!isInContext) {
-            console.warn(`Can't find object`)
-            return;
+        if (type === "H") {
+            newH = Math.max(1, Math.floor(Math.abs(localY) * 2));
         }
 
-        const rx = cos * deltaX - sin * deltaY;
-        const ry = sin * deltaX + cos * deltaY;
-
-        let deltaWidth = rx;
-        let deltaHeight = ry;
-
-        let finalWidth: number;
-        let finalHeight: number;
-
-        if(type == "RT" || type == "RB") {
-            finalWidth = props.item.w + deltaWidth;
-        } else {
-            finalWidth = props.item.w - deltaWidth;
+        if (newW !== props.item.w || newH !== props.item.h) {
+            context.modifyItem(props.item.id, {
+                w: newW,
+                h: newH
+            });
         }
-
-        if(type == "RT" || type == "LT") {
-            finalHeight = props.item.h + deltaHeight;
-        } else {
-            finalHeight = props.item.h - deltaHeight;
-        }
-
-        const minWidth = 64;
-        const minHeight = 64;
-
-        if(finalWidth >= minWidth && finalHeight >= minHeight) {
-            if(props.item.kind === SvgItemType.TABLE_CIRCLE) {
-                const radius = Math.max(finalWidth, finalHeight);
-
-                context.modifyItem(props.item.id, {
-                    x: props.item.x + deltaX / 2,
-                    y: props.item.y - deltaY / 2,
-                    w: radius,
-                    h: radius
-                });
-            } else {
-                context.modifyItem(props.item.id, {
-                    x: props.item.x + deltaX / 2,
-                    y: props.item.y - deltaY / 2,
-                    w: finalWidth,
-                    h: finalHeight
-                });
-            }
-        }
-
-        lastMouseX = e.clientX;
-        lastMouseY = e.clientY;
     }
 
     function onResizeHandlePointerUp(e: PointerEvent) {
@@ -127,34 +90,31 @@ export function SvgItemFocus(
         e.stopPropagation();
         e.preventDefault();
         target.setPointerCapture(e.pointerId);
-
-        lastMouseX = e.clientX;
     }
 
-    function onRotateHandlePointerMove(e: PointerEvent) {
+    function onRotateHandlePointerMove(e: PointerEvent, offsetAngle: number) {
         const target = e.target as SVGCircleElement;
         if (!target.hasPointerCapture(e.pointerId)) return;
 
         e.stopPropagation();
 
-        const deltaX = e.clientX - lastMouseX;
-        const newAngle = Math.floor(props.item.angle + deltaX * 0.25);
-        if(newAngle === props.item.angle) {
-            return;
-        }
+        const worldX = e.clientX - context.clientWidth() / 2 - context.panX();
+        const worldY = e.clientY - context.clientHeight() / 2 - context.panY();
 
-        const isInContext = context.items[props.item.id];
-        if(!isInContext) {
-            console.warn(`Can't find object`)
-            return;
-        }
-        
-        context.modifyItem(props.item.id, {
-            angle: newAngle
-        });
-        lastMouseX = e.clientX;
+        const zoom = context.zoom();
 
-        console.log("Rotate handle pointer move");
+        const px = worldX / zoom;
+        const py = worldY / zoom;
+
+        const dx = px - props.item.x;
+        const dy = py - props.item.y;
+
+        const angle = Math.floor(Math.atan2(dy, dx) * 180 / Math.PI + offsetAngle);
+        if(angle != props.item.angle) {
+            context.modifyItem(props.item.id, {
+                angle: angle
+            })
+        }
     }
 
     function onRotateHandlePointerUp(e: PointerEvent) {
@@ -162,6 +122,75 @@ export function SvgItemFocus(
 
         e.stopPropagation();
         target.releasePointerCapture(e.pointerId);
+    }
+
+    const ControlResizePoint = (
+        props: { x: number, y: number, type: "W" | "H" }
+    ) => {
+        return (
+            <>
+                <circle 
+                    cx={props.x} 
+                    cy={props.y} 
+                    r={12}
+                    fill="var(--color-accent)"
+                    stroke="var(--color-white)"
+                    stroke-width="2"
+                    style={{ cursor: "e-resize" }}
+                    on:pointerdown={onResizeHandlePointerDown}
+                    on:pointermove={(e) => onResizeHandlePointerMove(e, props.type)}
+                    on:pointerup={onResizeHandlePointerUp}
+                />
+                <Switch>
+                    <Match when={props.type === "W"}>
+                        <ArrowRightIcon x={props.x - 8} y={props.y - 8} width={16} height={16} stroke="white" pointer-events="none" />
+                    </Match>
+                    <Match when={props.type === "H"}>
+                        <ArrowDownIcon x={props.x - 8} y={props.y - 8} width={16} height={16} stroke="white" pointer-events="none" />
+                    </Match>
+                </Switch>
+                
+            </>
+        );
+    }
+
+    const ControlRotatePoint = (
+        props2: { x: number, y: number }
+    ) => {
+        
+        const dx = props2.x - props.item.w / 2;
+        const dy = props2.y + props.item.h / 2;
+        const offsetAngle = Math.atan2(dy, dx) * 180 / Math.PI
+
+        console.log(`D ${dx} ${dy}`)
+        console.log(`Angle ${offsetAngle}`)
+
+        return (
+            <>
+                <circle 
+                    cx={props2.x} 
+                    cy={props2.y} 
+                    r={12}
+                    fill="var(--color-accent)"
+                    stroke="var(--color-white)"
+                    stroke-width="2"
+                    style={{ cursor: "pointer" }}
+                    on:pointerdown={onRotateHandlePointerDown}
+                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle)}
+                    on:pointerup={onRotateHandlePointerUp}
+                />
+                <circle 
+                    cx={props2.x} 
+                    cy={props2.y} 
+                    r={4}
+                    fill="var(--color-white)"
+                    style={{ cursor: "pointer" }}
+                    on:pointerdown={onRotateHandlePointerDown}
+                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle)}
+                    on:pointerup={onRotateHandlePointerUp}
+                />
+            </>
+        );
     }
 
     return(
@@ -194,23 +223,16 @@ export function SvgItemFocus(
                         />
                     </circle>
                 </Match>
-                <Match when={false}>
+                <Match when={props.item.kind == SvgItemType.TABLE_CIRCLE}>
                     <circle
-                        cx={props.item.props.radius}
-                        cy={props.item.props.radius}
-                        r={props.item.props.radius}
+                        cx={props.item.w / 2}
+                        cy={props.item.w / 2}
+                        r={props.item.w / 2}
                         fill="none"
                         stroke="var(--color-accent)"
-                        stroke-width="4"
+                        stroke-width="2"
                         stroke-dasharray="6 4"
                     >
-                        <animate
-                            attributeName="stroke-dashoffset"
-                            from="20"
-                            to="0"
-                            dur="1s"
-                            repeatCount="indefinite"
-                        />
                     </circle>
                 </Match>
                 <Match when={true}>
@@ -237,103 +259,33 @@ export function SvgItemFocus(
             
 
             <Show when={props.item.kind != SvgItemType.TABLE_SEAT}>
-                {/* Control point for resize, using circle svg element */}
-                <circle 
-                    cx={x() + width()} 
-                    cy={y()} 
-                    r={5}
-                    fill="var(--color-white)"
-                    stroke="var(--color-accent)"
-                    stroke-width="1"
-                    style={{ cursor: "ne-resize" }}
-                    on:pointerdown={onResizeHandlePointerDown}
-                    on:pointermove={(e) => onResizeHandlePointerMove(e, "RT")}
-                    on:pointerup={onResizeHandlePointerUp}
+                <ControlResizePoint 
+                    x={x() + width()}
+                    y={y() + height() / 2}
+                    type="W"
                 />
 
-                {/* Control point for resize, using circle svg element */}
-                <circle 
-                    cx={x()} 
-                    cy={y()} 
-                    r={5}
-                    fill="var(--color-white)"
-                    stroke="var(--color-accent)"
-                    stroke-width="1"
-                    style={{ cursor: 'nw-resize' }}
-                    on:pointerdown={onResizeHandlePointerDown}
-                    on:pointermove={(e) => onResizeHandlePointerMove(e, "LT")}
-                    on:pointerup={onResizeHandlePointerUp}
-                />
-
-                {/* Control point for resize, using circle svg element */}
-                <circle 
-                    cx={x()} 
-                    cy={y() + height()} 
-                    r={5}
-                    fill="var(--color-white)"
-                    stroke="var(--color-accent)"
-                    stroke-width="1"
-                    style={{ cursor: 'sw-resize' }}
-                    on:pointerdown={onResizeHandlePointerDown}
-                    on:pointermove={(e) => onResizeHandlePointerMove(e, "LB")}
-                    on:pointerup={onResizeHandlePointerUp}
-                />
-
-                {/* Control point for resize, using circle svg element */}
-                <circle 
-                    cx={x() + width()} 
-                    cy={y() + height()} 
-                    r={5}
-                    fill="var(--color-white)"
-                    stroke="var(--color-accent)"
-                    stroke-width="1"
-                    style={{ cursor: 'se-resize' }}
-                    on:pointerdown={onResizeHandlePointerDown}
-                    on:pointermove={(e) => onResizeHandlePointerMove(e, "RB")}
-                    on:pointerup={onResizeHandlePointerUp}
-                />
-
-                <line
-                    x1={x() + width() / 2}
-                    y1={y()}
-                    x2={x() + width() / 2}
-                    y2={y() - 16}
-                    stroke="gray"
-                    stroke-width="1"
-                />
-
-                {/* Rotate handle */}
-                <g
-                    
-                    on:pointerdown={onRotateHandlePointerDown}
-                    on:pointermove={onRotateHandlePointerMove}
-                    on:pointerup={onRotateHandlePointerUp}
-                >
-
-                    {/* invisible hit area */}
-                    <rect
-                        x={x() + width() / 2 - 16 / context.zoom()}
-                        y={y() - 24 - 16 / context.zoom()}
-                        width={32 / context.zoom()}
-                        height={32 / context.zoom()}
-                        fill="transparent"
-                        style={{ cursor: 'grab' }}
-                        pointer-events="all"
+                <Show when={props.item.kind == SvgItemType.TABLE_CIRCLE}>
+                    <ControlRotatePoint
+                        x={x() + width() / 2}
+                        y={y()}
                     />
+                </Show>
 
-                    <RotateCw
-                        x={x() + width() / 2 - 6 / context.zoom()}
-                        y={y() - 24 - 6 / context.zoom()}
-                        width={12 / context.zoom()}
-                        height={12 / context.zoom()}
-
-                        stroke="gray"
-                        stroke-width="3"
-                        
-                        pointer-events="none"
-                        
+                <Show when={props.item.kind != SvgItemType.TABLE_CIRCLE}>
+                    <ControlRotatePoint
+                        x={x()}
+                        y={y()}
                     />
-                </g>
+                </Show>
+
+                <Show when={props.item.kind != SvgItemType.TABLE_CIRCLE && props.item.kind != SvgItemType.ICON}>
+                    <ControlResizePoint
+                        x={x() + width() / 2}
+                        y={y() + height()}
+                        type="H"
+                    />
+                </Show>
             </Show>
         </g>
     )

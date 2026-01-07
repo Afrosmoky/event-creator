@@ -1,4 +1,5 @@
 import { createEffect, createMemo, createSignal } from "solid-js";
+import { clamp } from "./SvgItem";
 
 interface SliderProps {
     min: number;
@@ -8,14 +9,6 @@ interface SliderProps {
     onChange?: (value: number) => void;
 }
 
-function clamp<T extends number>(
-    value: T,
-    min: T,
-    max: T
-) {
-    return Math.min(Math.max(value, min), max);
-}
-
 export default function Slider(
     props: SliderProps
 ) {
@@ -23,9 +16,8 @@ export default function Slider(
     let handleDOM: HTMLButtonElement;
 
     const [handleX, setHandleX] = createSignal(0);
-    const [value, setValue] = createSignal(props.value ?? props.min);
     const clampedValue = createMemo(() => {
-        return clamp(Math.round(value()), props.min, props.max);
+        return clamp(Math.floor(props.value), props.min, props.max);
     })
 
     let lastClampedValue = clampedValue();
@@ -40,15 +32,6 @@ export default function Slider(
         const progress = (clampedValue() - props.min) / (props.max - props.min);
 
         setHandleX(progress * width);
-    });
-
-    createEffect(() => {
-        const value = clampedValue();
-        
-        if(value != lastClampedValue) {
-            lastClampedValue = value;
-            props.onChange?.(value);
-        }
     });
 
     function getAvailableWidth() {
@@ -76,10 +59,13 @@ export default function Slider(
         const sliderX = sliderDOM.getBoundingClientRect().x;
         const sliderWidth = getAvailableWidth();
 
-        const t = (x - sliderX) / (sliderWidth);
+        const t = clamp((x - sliderX) / (sliderWidth), 0, 1);
         const value = props.min + (props.max - props.min) * t;
 
-        setValue(value);
+        if(value != lastClampedValue) {
+            lastClampedValue = value;
+            props.onChange?.(Math.floor(value));
+        }
     }
 
     function onHandlePointerUp(event: PointerEvent) {
@@ -104,7 +90,7 @@ export default function Slider(
                     
                 </button>
                 <label class="absolute left-1/2 -translate-x-1/2 top-4 rounded-md px-1.5 py-0.5 text-sm bg-foreground-muted text-primary-soft">
-                    {clampedValue()}
+                    {Math.floor(props.value)}
                 </label>
             </div>
             <div 

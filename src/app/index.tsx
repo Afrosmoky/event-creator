@@ -598,9 +598,15 @@ export function App() {
 					continue;
 				}
 
+				if(diff.props) {
+					delete diff.props.preferred_seats;
+				}
+
 				console.log(`Detected diff for item ${id}`);
 				console.log(diff);
 
+				
+				
 				canvas.modifyItem(id, diff, false);
 			}
 		}
@@ -645,7 +651,7 @@ export function App() {
 				item.props.arms_width = backend.config.arms_width ?? SvgItemTableUPropsDef["arms_width"].min;
 				item.props.bottom_height = backend.config.bottom_height ?? SvgItemTableUPropsDef["bottom_height"].min;
 			} else if(isSvgItemTableCircle(item)) {
-				item.props.radius = backend.config.radius ?? SvgItemTableCirclePropsDef["radius"].min;
+				item.props.radius = parseFloat(backend.config.radius?.toString()) ?? SvgItemTableCirclePropsDef["radius"].min;
 			}
 		} else if(isSvgItemIcon(item)) {
 			item.props.label = backend.name ?? "";

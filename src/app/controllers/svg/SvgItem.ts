@@ -1,3 +1,5 @@
+import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+
 export type EnumLike = Record<string, string | number>;
 export type EnumValues<T extends EnumLike> = T[keyof T];
 
@@ -201,7 +203,13 @@ export const SvgItemTablePropsDef = createTypeProps({
         type: "number",
         name: "prop_seat_spacing",
         default: 45,
-        min: 40
+        min: 42
+    },
+    "preferred_seats": {
+        type: "number",
+        name: "pref",
+        default: -1,
+        min: -1
     },
     "show_unseated": {
         type: "bool",
@@ -293,6 +301,14 @@ export const SvgItemTableUPropsDef = createTypeProps({
     }
 });
 
+export const MIN_SEAT_SPACING = 42;
+export const MAX_SEAT_SPACING = 180;
+export const SEAT_RADIUS = 20;
+
+export function clamp(value: number, min: number, max: number) {
+    return Math.min(Math.max(value, min), max);
+}
+
 export type SvgItemTableUProps = PropsFromDescriptor<typeof SvgItemTableUPropsDef>;
 
 export function isSvgItemTableU(item: SvgItem<SvgItemTableProps>): item is SvgItem<SvgItemTableUProps> {
@@ -311,7 +327,7 @@ export const SvgItemTableCirclePropsDef = createTypeProps({
 
 export type SvgItemTableCircleProps = PropsFromDescriptor<typeof SvgItemTableCirclePropsDef>;
 
-export function isSvgItemTableCircle(item: SvgItem<SvgItemTableProps>): item is SvgItem<SvgItemTableCircleProps> {
+export function isSvgItemTableCircle(item: SvgItem<any>): item is SvgItem<SvgItemTableCircleProps> {
     return item.kind === "TABLE_CIRCLE";
 }
 
@@ -359,3 +375,13 @@ export const SvgItems = {
         props: SvgItemIconPropsDef
     }
 } as const satisfies { [key: string]: SvgItemBlueprint };
+
+export class ItemTableCircleModel {
+    readonly context;
+
+    constructor(
+        private get: () => SvgItem<SvgItemTableCircleProps>
+    ) {
+        this.context = useSvgDrawerContext();
+    }
+}
