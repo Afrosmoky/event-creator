@@ -67,10 +67,6 @@ const SPRITES_META = {
     viewBox: '102 102 308 308',
     width: 300, height: 300,
   },
-  'long-table': {
-    viewBox: '27.385 130 478.018 328',
-    width: 470.018, height: 320,
-  },
   'microphone': {
     viewBox: '102 102 308 308',
     width: 300, height: 300,
