@@ -10,7 +10,7 @@ export default function GuestListPanel(
     props: { show: boolean }
 ) {
     const context = useSvgDrawerContext();
-    const [view, setView] = createSignal<"list" | "group">("group");
+    const [view, setView] = createSignal<"list" | "group">("list");
 
     const groupMap = createMemo(() => {
         const map: Record<string, Guest[]> = {};
@@ -119,6 +119,13 @@ export function GuestElement(
 ) {
     const context = useSvgDrawerContext();
     const seated = createMemo(() => context.seats.find(o => o.guest_id === props.guest.id));
+    const seatedTable = createMemo(() => {
+        if(!seated()) {
+            return null;
+        }
+
+        return context.items[seated()!.table_id];
+    })
 
     function onPointerDown(event: PointerEvent) {
         if(event.button != 0) {
@@ -137,7 +144,7 @@ export function GuestElement(
                 <PinIcon width={16} height="auto" fill="var(--color-error)" color="var(--color-error)" />
                 <label class="text-foreground-muted text-xs italic">
                     {seated() ? 
-                        `Stół ${seated().table_id} Krzesło ${seated().seat_index + 1}`
+                        `Stół ${seatedTable()?.props?.name || seated().id} Krzesło ${seated().seat_index + 1}`
                         : "Nie przypisany"
                     }
                 </label>

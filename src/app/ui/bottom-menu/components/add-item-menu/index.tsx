@@ -137,17 +137,6 @@ export function AddItemMenu(props: AddItemMenuProps) {
           angleOriginX: 100,
           angleOriginY: 100,
         } as AnyState;
-      case 'long-table':
-        return {
-          ...common,
-          kind: 'long-table',
-          seats: 30,
-          config: { type: 'long', width: 500, height: 256 },
-          spacing: 40,
-          angle: 0,
-          angleOriginX: 250,
-          angleOriginY: 128,
-        } as AnyState;
       case 'row-of-chairs': return { ...common, kind: 'chairs', seats: 30, config: { width: 256 }, angle: 0, angleOriginX: 0, angleOriginY: 0, spacing: 40 };
       default:
         // @ts-ignore

@@ -1,13 +1,10 @@
 import { createPatchSync, mergePatchArray, SeatPatch, SvgDrawerContextType } from "@/app/context/SvgDrawerContext";
 import { createBackendFromSeat, encodeClientSeat } from "../adapters/seat";
 import API from "@/app/api/API";
-import { BiMap } from "../utils";
 
 export function createSeatSync(
     ballroomId: () => string,
-    canvas: SvgDrawerContextType,
-    seatIdMap: BiMap<number, number>,
-    removedSeats: Map<number, boolean>
+    canvas: SvgDrawerContextType
 ) {
     async function sendPatch(patch: SeatPatch) {
         console.log(`Sending ${patch.type} patch for seat ${patch.id} with values: `);
@@ -20,15 +17,10 @@ export function createSeatSync(
                 return;
             }
 
-            if(!seatIdMap.hasKey(patch.id)) {
-                console.warn(`Wanted to send MOD patch but SEAT ${patch.id} is not associated with backend`);
-                return;
-            }
-
-            const backendId = seatIdMap.getValue(patch.id);
             const item = encodeClientSeat(seat);
+            item.ballroom_id = ballroomId();
 
-            await API.update_seat(backendId, item);
+            await API.update_seat(patch.id, item);
         } else if(patch.type === "add") {
             const backend = createBackendFromSeat(patch.item);
             backend.ballroom_id = ballroomId();
@@ -36,19 +28,9 @@ export function createSeatSync(
             const data = await API.add_seat(backend);
             const backendId = data.id;
 
-            seatIdMap.set(patch.id, backendId);
+            canvas.changeSeatId(patch.id, backendId);
         } else if(patch.type === "del") {
-            if(!seatIdMap.hasKey(patch.id)) {
-                console.warn(`Wanted to send DEL patch for SEAT ${patch.id} but it's not associated with backend`);
-                return;
-            }
-
-            const backendId = seatIdMap.getValue(patch.id);
-
-            seatIdMap.deleteByKey(patch.id);
-            removedSeats.set(backendId, true);
-
-            await API.delete_seat(backendId);
+            await API.delete_seat(patch.id);
         }
     }
 

@@ -94,6 +94,8 @@ export function createPolling<T>(callback: () => Promise<T>, interval: number, h
             clearTimeout(timeout);
         }
     });
+
+    poll();
 }
 
 export function createPatchSync<T extends GenericPatch<any, any>>(
@@ -309,6 +311,7 @@ export function clear_same<T extends Record<string, any>>(self: T, other: T) {
 }
 
 let seat_nonce = 0;
+let item_nonce = 0;
 
 export const makeSvgDrawerContext = () => {
     const [items, setItems] = createStore<{ [id: string]: SvgItem | undefined }>({});
@@ -362,14 +365,18 @@ export const makeSvgDrawerContext = () => {
     function addItem(id: number, item: SvgItem, emitPatch = true) {
         const patch: Patch = {
             type: 'add',
-            id: id,
+            id: id ?? (1_000_000 + item_nonce++),
             item: item
         };
+
+        item.id = patch.id;
 
         batch(() => {
             applyPatch(patch);
             if(emitPatch) setPatches(patches.length, patch);
         });
+
+        return item;
     }
 
     function modifyItem(id: number, change: DeepPartial<SvgItem>, emitPatch = true) {
@@ -480,7 +487,7 @@ export const makeSvgDrawerContext = () => {
     function addSeat(id: number, seat: SeatClient, emitPatch: boolean = true) {
         const patch: SeatPatch = {
             type: "add",
-            id: seat_nonce++,
+            id: id ?? (1_000_000 + seat_nonce++),
             item: seat
         };
 

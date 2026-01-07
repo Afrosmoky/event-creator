@@ -186,7 +186,7 @@ export function SvgItemTable(
                 const seatX = p0.x + params.seat_start_padding * nx + perpX * (item.props.seat_radius + 4) + stepX * (j + 0.5);
                 const seatY = p0.y + params.seat_start_padding * ny + perpY * (item.props.seat_radius + 4) + stepY * (j + 0.5);
 
-                const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT, (item.id + 1) * 1000 + seats.length);
+                const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT);
                 seat.parent = item;
                 seat.x = seatX - item.w / 2;
                 seat.y = seatY - item.h / 2;
@@ -207,7 +207,7 @@ export function SvgItemTable(
             }
 
             for(const seat of seats) {
-                canvas.addItem(seat.id, seat, false);
+                canvas.addItem(undefined, seat, false);
             }
 
             setState(produce(state => {

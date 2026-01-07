@@ -113,26 +113,24 @@ export function AppBottomMenu() {
             await createPngBlobFromSvg(rootDOM);
 
 		saveBlobToFile(url, type);
-		//URL.revokeObjectURL(url);
-
 		setShowExportPicker(false);
 	}
 
-    async function createSvgItemFromPicker(item: SideMenuItem) {
-        const svgItem = createSvgItemFromBlueprint(item.blueprint);
-        for(const key in item.overwrite) {
-            if(!item.blueprint.props[key]) {
+    async function createSvgItemFromPicker(config: SideMenuItem) {
+        let item = createSvgItemFromBlueprint(config.blueprint);
+        for(const key in config.overwrite) {
+            if(!config.blueprint.props[key]) {
                 continue;
             }
 
-            svgItem.props[key] = item.overwrite[key];
+            item.props[key] = config.overwrite[key];
         }
 
-        svgItem.x = -canvas.panX();
-		svgItem.y = -canvas.panY();
+        item.x = -canvas.panX();
+		item.y = -canvas.panY();
 
-        canvas.addItem(svgItem.id, svgItem);
-		canvas.setFocusedItemIndex(svgItem.id);
+        item = canvas.addItem(undefined, item);
+		canvas.setFocusedItemIndex(item.id);
     }
 
     return (
@@ -153,7 +151,7 @@ export function AppBottomMenu() {
                                                     class="p-4 rounded-md bg-background border border-border flex justify-center cursor-pointer"
                                                     on:click={() => createSvgItemFromPicker(item)}
                                                 >
-                                                    <SvgIcon icon={item.icon} width="32" height="32" inline={true} />
+                                                    <SvgIcon icon={item.icon} width={32} height={32} />
                                                 </button>
                                             )}
                                         </For>

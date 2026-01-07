@@ -28,14 +28,8 @@ export function createItemPolling(
 
 			if(!value) {
 				canvas.removeItem(id, false);
-			} else if(!canvas.items[id]) {
-				if(canvas.removed_ids.has(id)) {
-					console.warn(`Won't create server item, cause it's already deleted`);
-					continue;
-				}
-
-				const item = createItemFromBackend(value);
-				canvas.addItem(id, item, false);
+			} else if(!canvas.items[id]) { // add
+				canvas.addItem(id, createItemFromBackend(value), false);
 			} else { // mod
 				const localDiff = decodeBackendElement(value);
 				if(!localDiff) {
@@ -54,7 +48,7 @@ export function createItemPolling(
 					continue;
 				}
 
-				console.log(`Detected diff for item ${id}`);
+				console.log(`Detected diff for item ${id}: `);
 				console.log(localDiff);
 				
 				canvas.modifyItem(id, localDiff, false);

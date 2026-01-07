@@ -54,28 +54,16 @@ export function SvgItemIcon(
 
         untrack(() => {
             if(props.item.h !== props.item.w) {
-                /*context.modifyItem(props.item.id, {
+                context.modifyItem(props.item.id, {
                     h: props.item.w
-                });*/
+                });
             }
         });
     });
 
-    createEffect(() => {
-        if(!iconDOM) {
-            return;
-        }
-
-        const bbox = iconDOM.getBBox();
-        setBbox(bbox);
-
-        console.log(bbox);
-    })
-
     return (
         <g>
-            <rect x={bbox()?.x} y={bbox()?.y} width={bbox()?.width} height={bbox()?.height} fill="yellow" pointer-events="all" />
-            <SvgIcon ref={iconDOM} icon={props.item.props.icon} width={props.item.w} height={props.item.h} />
+            <SvgIcon ref={iconDOM} icon={props.item.props.icon} width={props.item.w} height={props.item.h} fill="transparent" pointer-events="all" />
             <text 
                 x={props.item.w / 2}
                 y={props.item.h + 20}

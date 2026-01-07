@@ -2,7 +2,10 @@ import { createPatchSync, mergePatchArray, Patch, SvgDrawerContextType } from "@
 import { encodeClientItem } from "../adapters/item";
 import API from "@/app/api/API";
 
-export function createItemSync(ballroomId: () => string, canvas: SvgDrawerContextType) {
+export function createItemSync(
+    ballroomId: () => string, 
+    canvas: SvgDrawerContextType
+) {
     async function sendPatch(patch: Patch) {
         console.log(`Sending ${patch.type} patch for item ${patch.id} with values: `);
         console.log(patch.type === "mod" ? patch.value : patch.item);
@@ -14,14 +17,10 @@ export function createItemSync(ballroomId: () => string, canvas: SvgDrawerContex
                 return;
             }
 
-            const backend = encodeClientItem(patch.value);
+            const backend = encodeClientItem(item); // need to encode entire item
 
-            // all of these are required for mod calls
             backend.ballroom_id = ballroomId();
             backend.status = "active";
-            backend.x = item.x;
-            backend.y = item.y;
-            backend.kind = item.kind;
             backend.spacing = item.props?.seat_spacing ?? 0;
 
             await API.update_element(patch.id, backend);

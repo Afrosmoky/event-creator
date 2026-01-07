@@ -86,22 +86,16 @@ export function createSvgItem<T extends PropertiesDescriptor>(
     return item;
 }
 
-let nonce = 0;
 export function createSvgItemFromBlueprint<T extends PropertiesDescriptor>(
-    blueprint: SvgItemBlueprint<T>,
-    id?: number
+    blueprint: SvgItemBlueprint<T>
 ) {
     let props: any = {};
     for(const key in blueprint.props) {
         props[key] = blueprint.props[key].default;
     }
 
-    if(id === undefined) {
-       id  = nonce++;
-    }
-
     const item: SvgItem<PropsFromDescriptor<T>> = {
-        id: id,
+        id: -1,
         kind: blueprint.type,
         x: 0, y: 0,
         w: 256, h: 256,
@@ -115,8 +109,8 @@ export function createSvgItemFromBlueprint<T extends PropertiesDescriptor>(
 
 export function cloneSvgItem(original: SvgItem) {
     let copy = deepCloneObj(original);
-    
-    copy.id = nonce++;
+
+    copy.id = -1;
     copy.last_update = Date.now();
 
     return copy;

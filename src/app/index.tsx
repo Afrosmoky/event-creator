@@ -14,6 +14,8 @@ import { createGuestSync } from './controllers/svg/sync/guest-sync';
 import { createItemPolling } from './controllers/svg/polling/item-polling';
 import { createSeatPolling } from './controllers/svg/polling/seat-polling';
 import { createGuestPolling } from './controllers/svg/polling/guest-polling';
+import { createItemController } from './controllers/svg/controllers/item-controller';
+import { createSeatController } from './controllers/svg/controllers/seat-controller';
 
 export function App() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -22,18 +24,12 @@ export function App() {
 	})
 
 	const [showGuestList, setShowGuestList] = createSignal(false);
-
 	const canvas = useSvgDrawerContext();
 
-    const seatIdMap = new BiMap<number, number>();
-    const removedSeats = new Map<number, boolean>();
+	createItemController(ballroomId, canvas);
+	createSeatController(ballroomId, canvas);
 
-	createItemSync(ballroomId, canvas);
-	createSeatSync(ballroomId, canvas, seatIdMap, removedSeats);
 	createGuestSync(canvas);
-
-	createItemPolling(ballroomId, canvas);
-	createSeatPolling(ballroomId, canvas, seatIdMap, removedSeats);
 	createGuestPolling(ballroomId, canvas);
 
 	onMount(() => {

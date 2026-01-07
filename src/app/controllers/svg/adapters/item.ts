@@ -82,7 +82,7 @@ export function createItemFromBackend(element: DeepPartial<API.Element>) {
     }
 
     const lastUpdated = new Date(element.updated_at ?? 0).getTime() + (60 * 60 * 1000);
-    const item = createSvgItemFromBlueprint(blueprint, element.id);
+    const item = createSvgItemFromBlueprint(blueprint);
 
     const decoded = decodeBackendElement(element);
     applyDiff(item, decoded);

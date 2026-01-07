@@ -133,7 +133,7 @@ export function SvgItemTableCircle(
             const x = Math.cos(rad) * r;
             const y = Math.sin(rad) * r;
 
-            const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT, (props.item.id + 1) * 1000 + seats.length);
+            const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT);
             seat.parent = props.item;
             seat.x = x;
             seat.y = y;
@@ -154,7 +154,7 @@ export function SvgItemTableCircle(
                 }
 
                 for(const seat of seats) {
-                    canvas.addItem(seat.id, seat, false);
+                    canvas.addItem(undefined, seat, false);
                 }
             })
             
