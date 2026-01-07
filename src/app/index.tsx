@@ -600,6 +600,7 @@ export function App() {
 
 				if(diff.props) {
 					delete diff.props.preferred_seats;
+					delete diff.props.show_unseated;
 				}
 
 				console.log(`Detected diff for item ${id}`);
