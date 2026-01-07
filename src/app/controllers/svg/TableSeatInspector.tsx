@@ -1,4 +1,4 @@
-import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { Guest, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItem, SvgItemIconProps, SvgItemTableSeatProps } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
 import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
@@ -19,7 +19,7 @@ export default function TableSeatInspector(
     const seatedGuest = createMemo(() => {
         for(const seated of context.seats) {
             if(seated.table_id === props.item.parent?.id && seated.seat_index === props.item.props.index) {
-                return context.guests.find(o => o.guest_id === seated.guest_id);
+                return context.guests.find(o => o.id === seated.guest_id);
             }
         }
 
@@ -28,17 +28,17 @@ export default function TableSeatInspector(
 
     const guestsToSeat = createMemo(() => {
         return context.guests.filter(guest => {
-            return !context.isGuestSeated(guest.guest_id);
+            return !context.isGuestSeated(guest.id);
         });
     })
 
-    function onGuestClick(guest: GuestAPIType) {
+    function onGuestClick(guest: Guest) {
         if(props.item.parent?.id === undefined) {
             console.warn(`Can't seat the guest at invalid table`);
             return;
         }
 
-        context.seatGuest(guest.guest_id, props.item.parent.id, props.item.props.index);
+        context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
     }
 
     function onReleaseSeat() {
@@ -47,7 +47,7 @@ export default function TableSeatInspector(
             return;
         }
 
-        context.unseatGuest(seatedGuest().guest_id);
+        context.unseatGuest(seatedGuest().id);
     }
 
     return (

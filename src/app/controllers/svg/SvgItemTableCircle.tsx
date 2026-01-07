@@ -58,7 +58,7 @@ export function SvgItemTableCircle(
         untrack(() => {
             canvas.modifyItem(props.item.id, {
                 h: props.item.w
-            })
+            });
         })
     })
 
@@ -174,7 +174,7 @@ export function SvgItemTableCircle(
 
             const guests = canvas.guests.filter(o => o.group === group);
             for(let i = 0; i < guests.length; ++i) {
-                canvas.seatGuest(guests[i].guest_id, props.item.id, i);
+                canvas.seatGuest(guests[i].id, props.item.id, i);
             }
         });
     }

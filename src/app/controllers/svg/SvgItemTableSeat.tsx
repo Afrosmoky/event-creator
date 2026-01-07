@@ -20,7 +20,7 @@ export function SvgItemTableSeat(
     const seatedGuest = createMemo(() => {
         for(const seated of context.seats) {
             if(seated.table_id === props.item.parent?.id && seated.seat_index === props.item.props.index) {
-                return context.guests.find(o => o.guest_id === seated.guest_id);
+                return context.guests.find(o => o.id === seated.guest_id);
             }
         }
 
@@ -44,7 +44,7 @@ export function SvgItemTableSeat(
             return;
         }
 
-        context.seatGuest(guest.guest_id, props.item.parent.id, props.item.props.index);
+        context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
     }
 
     createEffect(() => {
@@ -133,7 +133,7 @@ export function SvgItemTableSeat(
                     fill="#FAF1EF"
                     fill-opacity="0.2"
                     stroke="black"
-                    stroke-width={isHover() && context.draggingGuest() != -1 ? 0 : 1}
+                    stroke-width={isHover() && context.draggingGuest() != "" ? 0 : 1}
                     
                     stroke-dasharray="4 2"
                 ></circle>
@@ -200,7 +200,7 @@ export function SvgItemTableSeat(
                             <UnseatedIndicator />
                         </Match>
                     </Switch>
-                    <Show when={isHover() && context.draggingGuest() != -1}>
+                    <Show when={isHover() && context.draggingGuest() != ""}>
                         <GuestOverIndicator />
                     </Show>
                 </g>

@@ -225,8 +225,12 @@ export const SvgItemTablePropsDef = createTypeProps({
 
 export type SvgItemTableProps = PropsFromDescriptor<typeof SvgItemTablePropsDef>;
 
-export function isSvgItemTable(item: SvgItem<any>): item is SvgItem<SvgItemTableProps> {
-    return item.kind.startsWith("TABLE_");
+export function isSvgItemTable(item: SvgItem<any> | string): item is SvgItem<SvgItemTableProps> {
+    if(typeof item === "string") {
+        return item.startsWith("TABLE_");
+    } else {
+        return item.kind.startsWith("TABLE_");
+    }
 }
 
 export const SvgItemTableSeatPropsDef = createTypeProps({

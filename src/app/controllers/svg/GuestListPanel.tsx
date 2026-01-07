@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSignal, For, Match, Switch } from "solid-js";
-import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { Guest, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { Inspector, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
 import { MoveIcon, NotepadTextIcon, PinIcon, Trash2Icon, UnlinkIcon, UserRoundIcon, UsersRoundIcon } from "lucide-solid";
 import { GuestAPIType } from "@/app/api/apiEndpoints";
@@ -13,7 +13,7 @@ export default function GuestListPanel(
     const [view, setView] = createSignal<"list" | "group">("group");
 
     const groupMap = createMemo(() => {
-        const map: Record<string, GuestAPIType[]> = {};
+        const map: Record<string, Guest[]> = {};
 
         for(const guest of context.guests) {
             const section = map[guest.group] || [];
@@ -76,7 +76,7 @@ export default function GuestListPanel(
 }
 
 export function GroupElement(
-    props: { group: string, guests: GuestAPIType[] }
+    props: { group: string, guests: Guest[] }
 ) {
     const context = useSvgDrawerContext();
 
@@ -115,10 +115,10 @@ export function GroupElement(
 }
 
 export function GuestElement(
-    props: { guest: GuestAPIType }
+    props: { guest: Guest }
 ) {
     const context = useSvgDrawerContext();
-    const seated = createMemo(() => context.seats.find(o => o.guest_id === props.guest.guest_id));
+    const seated = createMemo(() => context.seats.find(o => o.guest_id === props.guest.id));
 
     function onPointerDown(event: PointerEvent) {
         if(event.button != 0) {
@@ -159,7 +159,7 @@ export function GuestElement(
                             (e.target as HTMLTextAreaElement).blur();
                         }
                     }}
-                    on:change={(e) => context.modifyGuestNote(props.guest.guest_id, e.target.value)}
+                    on:change={(e) => context.modifyGuestNote(props.guest.id, e.target.value)}
                 ></textarea>
             </div>
             <Button 

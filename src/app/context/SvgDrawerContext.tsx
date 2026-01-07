@@ -1,9 +1,9 @@
-import { batch, createContext, createSignal, useContext } from "solid-js";
+import { batch, createContext, createEffect, createResource, createSignal, onCleanup, onMount, useContext } from "solid-js";
 import type { SvgItem } from "../controllers/svg/SvgItem";
 import { createStore, produce, reconcile, unwrap } from "solid-js/store";
 import { GuestAPIType } from "../api/apiEndpoints";
 
-type SvgDrawerContextType = ReturnType<typeof makeSvgDrawerContext>;
+export type SvgDrawerContextType = ReturnType<typeof makeSvgDrawerContext>;
 
 const SvgDrawerContext = createContext<SvgDrawerContextType>();
 
@@ -32,14 +32,107 @@ export interface SeatClient {
     seat_index: number;
 }
 
-export type GenericPatch<T, IdType = number> = 
+export interface Guest {
+    id: string;
+    name: string;
+    surname: string;
+    group: string;
+    menu: string;
+    note: string;
+}
+
+export type GenericPatch<T = any, IdType = number> = 
     { type: 'add', id: IdType, item: T } | 
     { type: 'mod', id: IdType, value: DeepPartial<T> } |
     { type: 'del', id: IdType, item?: T };
 
 export type Patch = GenericPatch<SvgItem>;
 export type SeatPatch = GenericPatch<SeatClient>;
-export type GuestPatch = GenericPatch<GuestAPIType, string>;
+export type GuestPatch = GenericPatch<Guest, string>;
+
+export type PatchSender<T extends GenericPatch> = (patches: T[]) => Promise<void>;
+
+function debounce<T extends unknown[], U>(
+	callback: (...args: T) => PromiseLike<U> | U,
+	wait: number
+) {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+
+	return (...args: T): Promise<U> => {
+		if (timer) clearTimeout(timer);
+
+		return new Promise(resolve => {
+			timer = setTimeout(() => resolve(callback(...args)), wait);
+		});
+	};
+}
+
+export function createPolling<T>(callback: () => Promise<T>, interval: number, handler: (data: T) => void) {
+    let stopped = false;
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const [data, { refetch }] = createResource(callback);
+
+    createEffect(() => {
+        if(data()) {
+            handler(data() as T);
+        }
+    });
+
+    async function poll() {
+        if(stopped) {
+            return;
+        }
+
+        await refetch();
+        timeout = setTimeout(poll, interval);
+    }
+
+    onCleanup(() => {
+        stopped = true;
+        if(timeout) {
+            clearTimeout(timeout);
+        }
+    });
+}
+
+export function createPatchSync<T extends GenericPatch<any, any>>(
+    getter: () => T[],
+    sender: PatchSender<T>,
+    delay: number = 500
+) {
+    let processed = 0;
+    let flushing = false;
+
+    const queue: T[] = [];
+
+    const flush = debounce(async () => {
+        if(flushing) return;
+        flushing = true;
+
+        try {
+            while(queue.length > 0) {
+                const batch = queue.splice(0);
+                await sender(batch);
+            }
+        } finally {
+            flushing = false;
+        }
+    }, delay);
+
+    function enqueue(patch: T) {
+        queue.push(patch);
+        flush();
+    }
+
+    createEffect(() => {
+        const patches = getter();
+        while(processed < patches.length) {
+            enqueue(unwrap(patches[processed]));
+            processed++;
+        }
+    });
+}
 
 export function mergePatches<T>(self: GenericPatch<T>, other: GenericPatch<T>) {
     if(self.type != 'mod' || other.type != 'mod') {
@@ -73,7 +166,7 @@ export function mergePatches<T>(self: GenericPatch<T>, other: GenericPatch<T>) {
     } as GenericPatch<T>;
 }
 
-export function mergePatchArray<T>(arr: GenericPatch<T>[]) {
+export function mergePatchArray<T extends GenericPatch<any, any>>(arr: T[]) {
     const merged: GenericPatch<T>[] = [];
     let current: GenericPatch<T> = null;
 
@@ -195,6 +288,26 @@ export function applyDiff<T extends Record<string, any>>(self: any, diff: T) {
     }
 }
 
+export function clear_same<T extends Record<string, any>>(self: T, other: T) {
+    for(const key in self) {
+        if(!(key in other)) {
+            continue;
+        }
+
+        if(typeof self[key] === 'object' && typeof other[key] === 'object') {
+            clear_same(self[key], other[key]);
+
+            if(Object.keys(self[key]).length === 0) {
+                delete self[key];
+            }
+        } else {
+            if(self[key] === other[key]) {
+                delete self[key];
+            }
+        }
+    }
+}
+
 let seat_nonce = 0;
 
 export const makeSvgDrawerContext = () => {
@@ -206,8 +319,8 @@ export const makeSvgDrawerContext = () => {
     const [panX, setPanX] = createSignal(0);
     const [panY, setPanY] = createSignal(0);
     const [rootDOM, setRootDOM] = createSignal<SVGSVGElement | null>(null);
-    const [guests, setGuests] = createStore<GuestAPIType[]>([]);
-    const [draggingGuest, setDraggingGuest] = createSignal(-1);
+    const [guests, setGuests] = createStore<Guest[]>([]);
+    const [draggingGuest, setDraggingGuest] = createSignal("");
     const [draggingGroup, setDraggingGroup] = createSignal<string>(null);
     const [seats, setSeats] = createStore<SeatClient[]>([]);
     const [seatsMap, setSeatsMap] = createStore<{ [id: string]: SeatClient }>({});
@@ -227,7 +340,7 @@ export const makeSvgDrawerContext = () => {
     }
 
     function modifyGuestNote(id: string, note: string) {
-        const index = guests.findIndex(o => o.guest_id === id);
+        const index = guests.findIndex(o => o.id === id);
         if(index === -1) {
             throw new Error("Can't modify note of unexisting guest " + id);
         }
@@ -265,6 +378,11 @@ export const makeSvgDrawerContext = () => {
             id: id,
             value: change
         };
+
+        clear_same(change, items[id]);
+        if(Object.keys(change).length === 0) {
+            return;
+        }
 
         if(!change.last_update) {
             change.last_update = Date.now();
@@ -407,7 +525,7 @@ export const makeSvgDrawerContext = () => {
     }
 
     function seatGuest(guest_id: string, table_id: number, seat_index: number) {
-        if(!guests.find(o => o.guest_id == guest_id)) {
+        if(!guests.find(o => o.id == guest_id)) {
             throw new Error(`Can't seat guest ${guest_id}, doesn't exist!`);
         }
 

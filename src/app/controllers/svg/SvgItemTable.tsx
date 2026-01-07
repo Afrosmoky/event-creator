@@ -227,7 +227,7 @@ export function SvgItemTable(
 
             const guests = canvas.guests.filter(o => o.group === group);
             for(let i = 0; i < guests.length; ++i) {
-                canvas.seatGuest(guests[i].guest_id, props.item.id, i);
+                canvas.seatGuest(guests[i].id, props.item.id, i);
             }
         });
     }
