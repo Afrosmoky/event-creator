@@ -1,7 +1,7 @@
 import API from "@/app/api/API";
 import { applyDiff, DeepPartial } from "@/app/context/SvgDrawerContext";
 import { createSvgItemFromBlueprint, SvgItem, SvgItemBlueprint, SvgItems } from "../SvgItem";
-import { assign, color, num, str } from "../utils";
+import { assign, bool, color, num, str } from "../utils";
 
 const backendTypeToBlueprint = {
     ["TABLE_RECT"]: SvgItems.TABLE_RECT,
@@ -33,6 +33,7 @@ export function decodeBackendElement(element: DeepPartial<API.Element>) {
     assign(props, "radius", element.config?.radius, num);
     assign(props, "label", element.name, str);
     assign(props, "icon", element.icon, str);
+    assign(props, "show_unseated", element.config?.show_unseated, bool);
 
     if(Object.keys(props).length > 0) {
         item.props = props;
@@ -65,6 +66,7 @@ export function encodeClientItem(item: DeepPartial<SvgItem>) {
     assign(config, "bottom_width", item.props?.middle_width, num);
     assign(config, "arms_width", item.props?.arms_width, num);
     assign(config, "bottom_height", item.props?.bottom_height, num);
+    assign(config, "show_unseated", item.props?.show_unseated, bool);
 
     if(Object.keys(config).length > 0) {
         element.config = config;

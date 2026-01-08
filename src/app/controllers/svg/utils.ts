@@ -4,6 +4,20 @@ export function num(v: unknown): number | undefined {
     return Number.isFinite(n) ? n : undefined;
 }
 
+export function bool(v: unknown): boolean | undefined {
+    if (typeof v === "boolean") {
+        return v;
+    }
+    
+    if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        if (s === "true") return true;
+        if (s === "false") return false;
+    }
+
+    return undefined;
+}
+
 export function str(v: unknown): string | undefined {
     return typeof v === "string" ? v : undefined;
 }

@@ -51,7 +51,8 @@ namespace API {
             arms_width: number,
             bottom_height: number,
             top_height: number,
-            bottom_width: number
+            bottom_width: number,
+            show_unseated: boolean
         },
 
         created_at: string,
