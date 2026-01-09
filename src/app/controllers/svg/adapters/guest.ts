@@ -9,6 +9,7 @@ export function decodeBackendGuest(backend: DeepPartial<API.Guest>) {
     assign(client, "name", backend.name, str);
     assign(client, "surname", backend.surname, str);
     assign(client, "group", backend.group, str);
+    assign(client, "age_group", backend.age_group, str);
     assign(client, "menu", backend.menu, str);
     assign(client, "note", backend.note, str);
 
@@ -21,6 +22,7 @@ export function createGuestFromBackend(backend: DeepPartial<API.Guest>) {
         name: "",
         surname: "",
         group: "",
+        age_group: "",
         menu: "",
         note: ""
     };

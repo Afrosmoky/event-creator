@@ -5,6 +5,7 @@ import { MoveIcon, NotepadTextIcon, PinIcon, Trash2Icon, UnlinkIcon, UserRoundIc
 import { GuestAPIType } from "@/app/api/apiEndpoints";
 import { SvgIcon } from "./SvgItemIcon";
 import { Button } from "./UI";
+import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 
 export default function GuestListPanel(
     props: { show: boolean }
@@ -139,7 +140,10 @@ export function GuestElement(
         <div
             class="select-none relative w-full text-sm rounded-sm p-4 pb-3 bg-primary-soft border-border border flex flex-col items-start gap-2"
         >
-            <label class="text-foreground font-semibold">{props.guest.name} {props.guest.surname}</label>
+            <div class="flex gap-2 items-center">
+                <GuestIcon guest={props.guest} radius={12} />
+                <label class="text-foreground font-semibold">{props.guest.name} {props.guest.surname}</label>
+            </div>
             <div class="flex gap-1 mt-1">
                 <PinIcon width={16} height="auto" fill="var(--color-error)" color="var(--color-error)" />
                 <label class="text-foreground-muted text-xs italic">
@@ -176,18 +180,9 @@ export function GuestElement(
                 <MoveIcon width={16} height={16}/>
                 <p>Przeciągnij by przypisać</p>
             </Button>
-            <Switch>
-                <Match when={props.guest.menu?.toLowerCase() === "vegan"}>
-                    <div class="absolute top-2 right-2">
-                        <SvgIcon icon="vegan" width={32} height={32} />
-                    </div>
-                </Match>
-                <Match when={props.guest.menu?.toLowerCase() === "vegetarian"}>
-                    <div class="absolute top-2 right-2">
-                        <SvgIcon icon="vegetarian" width={32} height={32} />
-                    </div>
-                </Match>
-            </Switch>
+            <div class="absolute top-2 right-2">
+                <GuestDietIcon guest={props.guest} radius={16} />
+            </div>
            
         </div>
     )

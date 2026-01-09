@@ -14,37 +14,38 @@ export function createItemPolling(
 			state[item.id] = item;
 		}
 
-		const itemDiff = lastState ? getDiff(lastState, state) : state;
-		if(!itemDiff) {
+		const diffs = lastState ? getDiff(lastState, state) : state;
+		if(!diffs) {
 			return;
 		}
 
 		console.log(`==== ITEMS DIFF ====`)
-		console.log(itemDiff);
+		console.log(diffs);
 
-		for(const key in itemDiff) {
+		for(const key in diffs) {
 			const id = parseInt(key);
-			const value = itemDiff[key];
+			const diff = diffs[key];
 
-			if(!value) {
+			if(!diff) {
 				canvas.removeItem(id, false);
 			} else if(!canvas.items[id]) { // add
-				canvas.addItem(id, createItemFromBackend(value), false);
+				canvas.addItem(id, createItemFromBackend(diff), false);
 			} else { // mod
-				const localDiff = decodeBackendElement(value);
+				const localDiff = decodeBackendElement(diff);
 				if(!localDiff) {
 					continue;
 				}
 
 				const localItem = canvas.items[id];
-				const lastUpdate = new Date(value.updated_at ?? 0).getTime() + (60 * 60 * 1000);
+				const lastUpdate = new Date(state[key].updated_at ?? 0).getTime() + (60 * 60 * 1000);
 
 				if(localItem.last_update > lastUpdate) {
-					console.warn("Wanted to update from server, but client is newer");
+					console.warn("Won't update backend state, client is newer");
 					console.log(localDiff);
 
-					console.log(`Client: ${new Date(localItem.last_update)}`)
-					console.log(`Server: ${new Date(lastUpdate)}`)
+					console.log(`Client: ${new Date(localItem.last_update)}`);
+					console.log(`Server: ${new Date(lastUpdate)}`);
+
 					continue;
 				}
 

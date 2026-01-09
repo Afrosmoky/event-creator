@@ -6,16 +6,12 @@ import { createStore, produce } from 'solid-js/store';
 import { useSearchParams } from '@solidjs/router';
 import DrawerInspector from './controllers/svg/DrawerInspector';
 import GuestListPanel from './controllers/svg/GuestListPanel';
-import { CircleUserIcon, UsersRoundIcon } from 'lucide-solid';
-import { createItemSync } from './controllers/svg/sync/item-sync';
-import { BiMap } from './controllers/svg/utils';
-import { createSeatSync } from './controllers/svg/sync/seat-sync';
+import { UsersRoundIcon } from 'lucide-solid';
 import { createGuestSync } from './controllers/svg/sync/guest-sync';
-import { createItemPolling } from './controllers/svg/polling/item-polling';
-import { createSeatPolling } from './controllers/svg/polling/seat-polling';
 import { createGuestPolling } from './controllers/svg/polling/guest-polling';
 import { createItemController } from './controllers/svg/controllers/item-controller';
 import { createSeatController } from './controllers/svg/controllers/seat-controller';
+import { GuestIcon } from './controllers/svg/GuestIcon';
 
 export function App() {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -25,6 +21,8 @@ export function App() {
 
 	const [showGuestList, setShowGuestList] = createSignal(false);
 	const canvas = useSvgDrawerContext();
+
+	const draggingGuestObj = createMemo(() => canvas.guests.find(o => o.id == canvas.draggingGuest()));
 
 	createItemController(ballroomId, canvas);
 	createSeatController(ballroomId, canvas);
@@ -56,7 +54,9 @@ export function App() {
 			<div class="absolute top-1 bottom-1 left-0 p-2 border-r border-border bg-card rounded-r-md shadow-black/20 shadow-sm">
 				<AppBottomMenu />
 			</div>
-			<GuestDragOverlay guest={canvas.guests.find(o => o.id == canvas.draggingGuest())} />
+			<Show when={draggingGuestObj()}>
+				<GuestDragOverlay guest={draggingGuestObj()} />
+			</Show>
 			<GroupDragOverlay group={canvas.draggingGroup()} />
 		</div>
 	);
@@ -149,7 +149,7 @@ function GuestDragOverlay(
 				"top": state.y + "px"
 			}}
 		>
-			<CircleUserIcon width={40} height="match" />
+			<GuestIcon guest={props.guest} radius={20} />
 			<p class="text-xs">{props.guest?.name || "Unknown"}</p>
 		</div>
 	);

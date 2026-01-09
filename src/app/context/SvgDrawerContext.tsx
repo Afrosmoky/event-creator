@@ -37,6 +37,7 @@ export interface Guest {
     name: string;
     surname: string;
     group: string;
+    age_group: string;
     menu: string;
     note: string;
 }

@@ -5,6 +5,7 @@ import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, In
 import { createMemo, For, Match, Show, Switch } from "solid-js";
 import { GuestAPIType } from "@/app/api/apiEndpoints";
 import { CircleUserRoundIcon, UnlinkIcon } from "lucide-solid";
+import { GuestIcon } from "./GuestIcon";
 
 interface TableSeatInspectorProps {
     item: SvgItem<SvgItemTableSeatProps>;
@@ -56,7 +57,9 @@ export default function TableSeatInspector(
                 <InspectorCategoryContent>
                     <Switch>
                         <Match when={seatedGuest()}>
-                            <CircleUserRoundIcon class="self-center" width={96} height={96} stroke="var(--color-foreground)" />
+                            <div class="self-center text-foreground">
+                                <GuestIcon guest={seatedGuest()} radius={48} />
+                            </div>
                             <label class="text-foreground font-semibold text-sm text-center">
                                 {seatedGuest().name} {seatedGuest().surname}
                             </label>

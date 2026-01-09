@@ -3,6 +3,8 @@ import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps } from "./SvgItem";
 import { createEffect, createMemo, createSignal, Match, Show, Switch } from "solid-js";
 import { CircleUserRound } from "lucide-solid";
 import { createDroppable } from "@thisbeyond/solid-dnd";
+import { SvgIcon } from "./SvgItemIcon";
+import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 
 interface SvgItemTableSeatComponentProps {
     item: SvgItem<SvgItemTableSeatProps>;
@@ -85,12 +87,12 @@ export function SvgItemTableSeat(
                     fill-opacity="0"
                 />
 
-                <CircleUserRound 
-                    x={0} 
-                    y={0} 
-                    width={props.item.props.radius * 2} 
-                    height={props.item.props.radius * 2} 
-                    stroke="black"
+                <GuestIcon guest={seatedGuest()} radius={props.item.props.radius} />
+                <GuestDietIcon 
+                    guest={seatedGuest()} 
+                    radius={props.item.props.radius / 2} 
+                    x={-props.item.props.radius / 2}
+                    y={props.item.props.radius * 1.5 - (props.item.props.radius / 2)}
                 />
 
                 <text
