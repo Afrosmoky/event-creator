@@ -66,7 +66,8 @@ export function SvgItemTable(
             
             canvas.modifyItem(props.item.id, {
                 props: {
-                    seat_spacing: result.spacing
+                    seat_spacing: result.spacing,
+                    preferred_seats: -1
                 }
             })
         })

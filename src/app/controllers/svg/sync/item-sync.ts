@@ -28,6 +28,7 @@ export function createItemSync(
             const backend = encodeClientItem(patch.item);
 
             backend.ballroom_id = ballroomId();
+            backend.spacing = patch.item.props?.seat_spacing ?? 0;
             backend.status = "active";
 
             const data = await API.add_element(backend);
