@@ -91,8 +91,8 @@ export function SvgItemTableSeat(
                 <GuestDietIcon 
                     guest={seatedGuest()} 
                     radius={props.item.props.radius / 2} 
-                    x={-props.item.props.radius / 2}
-                    y={props.item.props.radius * 1.5 - (props.item.props.radius / 2)}
+                    x={-props.item.props.radius / 2 + 2}
+                    y={0}
                 />
 
                 <text
