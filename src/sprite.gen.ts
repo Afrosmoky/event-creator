@@ -55,10 +55,6 @@ const SPRITES_META = {
     viewBox: '173 43.5 219 361.5',
     width: 211, height: 353.5,
   },
-  'label': {
-    viewBox: '146.138 121.49 238.965 226.182',
-    width: 230.965, height: 218.182,
-  },
   'left door': {
     viewBox: '99.86 108.63 312.06 308',
     width: 304.06, height: 300,
@@ -82,10 +78,6 @@ const SPRITES_META = {
   'round-table': {
     viewBox: '92 100 328 328',
     width: 320, height: 320,
-  },
-  'row-of-chairs': {
-    viewBox: '102 180 308 65.5',
-    width: 300, height: 57.5,
   },
   'smoke': {
     viewBox: '102 102 308 308',
@@ -115,10 +107,6 @@ const SPRITES_META = {
     viewBox: '126.867 143.739 223.05 220.812',
     width: 215.05, height: 212.812,
   },
-  'tent': {
-    viewBox: '77 125 358.01 258.01',
-    width: 350.01, height: 250.01,
-  },
   'toilet-sign': {
     viewBox: '98.397 102.226 315.014 301.474',
     width: 307.014, height: 293.474,
@@ -137,4 +125,11 @@ const SPRITES_META = {
   }
 } as const;
 
-export { SPRITES_META };
+const VALID_ICONS = Object.keys(SPRITES_META).filter(
+  key => key !== 'u-table' &&
+  key !== 't-table' &&
+  key !== 'square-table' &&
+  key !== 'round-table'
+);
+
+export { SPRITES_META, VALID_ICONS };

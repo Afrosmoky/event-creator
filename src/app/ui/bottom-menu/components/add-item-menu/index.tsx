@@ -137,8 +137,7 @@ export function AddItemMenu(props: AddItemMenuProps) {
           angleOriginX: 100,
           angleOriginY: 100,
         } as AnyState;
-      case 'row-of-chairs': return { ...common, kind: 'chairs', seats: 30, config: { width: 256 }, angle: 0, angleOriginX: 0, angleOriginY: 0, spacing: 40 };
-      default:
+        default:
         // @ts-ignore
         const { width, height } = SPRITES_META[item];
         return {

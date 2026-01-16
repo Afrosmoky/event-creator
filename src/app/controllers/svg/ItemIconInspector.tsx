@@ -1,5 +1,4 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { Match, Switch } from "solid-js";
 import { cloneSvgItem, SvgItem, SvgItemIconProps } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
 import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";

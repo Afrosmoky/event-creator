@@ -213,7 +213,7 @@ export const SvgItemTablePropsDef = createTypeProps({
     "color": {
         type: "color",
         name: "prop_bg_color",
-        default: "#fdd994"
+        default: "#9B1B48"
     }
 });
 

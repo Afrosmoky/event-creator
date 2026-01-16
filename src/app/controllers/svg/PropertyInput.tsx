@@ -3,8 +3,8 @@ import { EnumLike, SvgItem } from "./SvgItem";
 import { createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch } from "solid-js";
 import Slider from "./Slider";
 import { ChevronDownIcon, ChevronUpIcon, MinusIcon, PlusIcon } from "lucide-solid";
-import { SvgIcon } from "./SvgItemIcon";
-import { SPRITES_META } from "@/sprite.gen";
+import { isIconAvailable, SvgIcon } from "./SvgItemIcon";
+import { SPRITES_META, VALID_ICONS } from "@/sprite.gen";
 
 interface PropertyInputProps {
     title: string,
@@ -211,7 +211,7 @@ export default function PropertyInput(
                             }}
                         >
                             <div class="grid grid-cols-4">
-                                <For each={Object.keys(SPRITES_META) as (keyof typeof SPRITES_META)[]}>
+                                <For each={[...VALID_ICONS]}>
                                     {key => {
                                         return (
                                             <button
@@ -228,6 +228,11 @@ export default function PropertyInput(
                                 </For>
                             </div>
                         </div>
+                        <Show when={!isIconAvailable(formattedValue())}>
+                            <p class="text-sm text-error mt-1">
+                                Ikona "{formattedValue()}" nie jest dostępna.
+                            </p>
+                        </Show>
                     </div>
                 </Show>
             </div>

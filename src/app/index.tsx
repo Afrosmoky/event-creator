@@ -13,6 +13,8 @@ import { createItemController } from './controllers/svg/controllers/item-control
 import { createSeatController } from './controllers/svg/controllers/seat-controller';
 import { GuestIcon } from './controllers/svg/GuestIcon';
 
+let DEV = false;
+
 export function App() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const ballroomId = createMemo(() => {
@@ -24,11 +26,37 @@ export function App() {
 
 	const draggingGuestObj = createMemo(() => canvas.guests.find(o => o.id == canvas.draggingGuest()));
 
-	createItemController(ballroomId, canvas);
-	createSeatController(ballroomId, canvas);
+	if(!DEV) {
+		createItemController(ballroomId, canvas);
+		createSeatController(ballroomId, canvas);
 
-	createGuestSync(canvas);
-	createGuestPolling(ballroomId, canvas);
+		createGuestSync(canvas);
+		createGuestPolling(ballroomId, canvas);
+	} else {
+		// initialize some guests for dev
+		canvas.setGuests([
+			{
+				id: "guest-1",
+				name: "Jan",
+				surname: "Kowalski",
+				gender: "man",
+				group: "Goście Pana Młodego",
+				age_group: "adult",
+				menu: "Vegetarian",
+				note: "Just a chill guy."
+			},
+			{
+				id: "guest-2",
+				name: "Anna",
+				surname: "Nowak",
+				gender: "woman",
+				group: "Rodzina",
+				age_group: "adult",
+				menu: "Vegan",
+				note: "Loves dancing."
+			}
+		]);
+	}
 
 	onMount(() => {
 		canvas.clearPatches();

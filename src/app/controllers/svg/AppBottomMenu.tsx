@@ -23,7 +23,7 @@ interface SideMenuConfig {
 const config: SideMenuConfig = {
     groups: [
         {
-            name: "category_tables",
+            name: "category_equipment",
             items: [
                 {
                     blueprint: SvgItems.TABLE_RECT,
@@ -44,25 +44,204 @@ const config: SideMenuConfig = {
             ]
         },
         {
-            name: "category_icons",
-            items: []
+            name: "category_attractions",
+            items: [
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "cake",
+                    overwrite: {
+                        icon: "cake"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "dj-controller",
+                    overwrite: {
+                        icon: "dj-controller"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "firework",
+                    overwrite: {
+                        icon: "firework"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "gifts",
+                    overwrite: {
+                        icon: "gifts"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "microphone",
+                    overwrite: {
+                        icon: "microphone"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "sound",
+                    overwrite: {
+                        icon: "sound"
+                    }
+                }
+            ]
+        },
+        {
+            name: "category_infrastructure",
+            items: [
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "air-conditioner",
+                    overwrite: {
+                        icon: "air-conditioner"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "caution-sign",
+                    overwrite: {
+                        icon: "caution-sign"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "compass",
+                    overwrite: {
+                        icon: "compass"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "dance-area",
+                    overwrite: {
+                        icon: "dance-area"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "disability-sing",
+                    overwrite: {
+                        icon: "disability-sing"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "electrical-outlet",
+                    overwrite: {
+                        icon: "electrical-outlet"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "fan",
+                    overwrite: {
+                        icon: "fan"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "heater",
+                    overwrite: {
+                        icon: "heater"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "light",
+                    overwrite: {
+                        icon: "light"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "smoke",
+                    overwrite: {
+                        icon: "smoke"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "toilet-sign",
+                    overwrite: {
+                        icon: "toilet-sign"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "tree",
+                    overwrite: {
+                        icon: "tree"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "water",
+                    overwrite: {
+                        icon: "water"
+                    }
+                }
+            ]
+        },
+        {
+            name: "category_layout",
+            items: [
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "arrow",
+                    overwrite: {
+                        icon: "arrow"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "left door",
+                    overwrite: {
+                        icon: "left door"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "pillar",
+                    overwrite: {
+                        icon: "pillar"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "right-door",
+                    overwrite: {
+                        icon: "right-door"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "stage",
+                    overwrite: {
+                        icon: "stage"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "strainght-wall",
+                    overwrite: {
+                        icon: "strainght-wall"
+                    }
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "target",
+                    overwrite: {
+                        icon: "target"
+                    }
+                }
+            ]
         }
     ]
 };
-
-for(const icon in SPRITES_META) {
-    if(icon === "square-table" || icon === "t-table" || icon === "u-table" || icon === "round-table") {
-        continue;
-    }
-
-    config.groups[1].items.push({
-        blueprint: SvgItems.ICON,
-        icon: icon,
-        overwrite: {
-            icon: icon
-        }
-    });
-}
 
 export function AppBottomMenu() {
     let exportControlDOM: HTMLDivElement = null!;
@@ -71,7 +250,6 @@ export function AppBottomMenu() {
     const canvas = useSvgDrawerContext();
     
     const [showExportPicker, setShowExportPicker] = createSignal(false);
-    const [group, setGroup] = createSignal<"icons" | "guests">("icons");
 
     onMount(() => {
 		document.addEventListener("pointerdown", onWindowPointerDown);
@@ -135,49 +313,28 @@ export function AppBottomMenu() {
 
     return (
         <div class="flex flex-col justify-end w-48 h-full gap-4 text-foreground bg-card">
-            <div class="grow overflow-y-auto p-2 flex flex-col gap-4 no-scrollbar">
-                <Switch>
-                    <Match when={group() === "icons"}>
-                        <For each={config.groups}>
-                            {group => (
-                                <>
-                                    <h3 class="uppercase text-sm font-semibold border-b border-dashed border-border">
-                                        {i18n.t_dynamic(group.name)}
-                                    </h3>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <For each={group.items}>
-                                            {item => (
-                                                <button 
-                                                    class="p-4 rounded-md bg-background border border-border flex justify-center cursor-pointer"
-                                                    on:click={() => createSvgItemFromPicker(item)}
-                                                >
-                                                    <SvgIcon icon={item.icon} width={32} height={32} />
-                                                </button>
-                                            )}
-                                        </For>
-                                    </div>
-                                </>
-                            )}
-                        </For>
-                    </Match>
-                    <Match when={group() === "guests"}>
-                        <For each={canvas.guests}>
-                            {guest => (
-                                <div class="text-sm rounded-sm p-4 border-gray-200 border shadow-inner shadow-black/10">
-                                    <div class="flex flex-col gap-3">
-                                        <div class="flex gap-2">
-                                            <CircleUserIcon width={36} height="auto" class="min-w-fit min-h-fit"/>
-                                            <div class="grow flex flex-col items-center justify-center">
-                                                <p class="font-semibold">{guest.name}</p>
-                                                <p class="text-xs">{guest.surname}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </For>
-                    </Match>
-                </Switch>
+            <div class="grow overflow-y-auto overscroll-none p-2 flex flex-col gap-4 no-scrollbar">
+                <For each={config.groups}>
+                    {group => (
+                        <>
+                            <h3 class="uppercase text-sm font-semibold text-foreground border-b border-dashed border-border">
+                                {i18n.t_dynamic(group.name)}
+                            </h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <For each={group.items}>
+                                    {item => (
+                                        <button 
+                                            class="p-4 rounded-md bg-background border border-border flex justify-center cursor-pointer"
+                                            on:click={() => createSvgItemFromPicker(item)}
+                                        >
+                                            <SvgIcon icon={item.icon} width={32} height={32} />
+                                        </button>
+                                    )}
+                                </For>
+                            </div>
+                        </>
+                    )}
+                </For>
             </div>
             <div class="flex flex-col gap-2">
                 <div class="relative" ref={exportControlDOM}>

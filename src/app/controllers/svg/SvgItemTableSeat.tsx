@@ -1,6 +1,6 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps } from "./SvgItem";
-import { createEffect, createMemo, createSignal, Match, Show, Switch } from "solid-js";
+import { createEffect, createMemo, createSignal, Match, Show, Switch, untrack } from "solid-js";
 import { CircleUserRound } from "lucide-solid";
 import { createDroppable } from "@thisbeyond/solid-dnd";
 import { SvgIcon } from "./SvgItemIcon";
@@ -13,9 +13,6 @@ interface SvgItemTableSeatComponentProps {
 export function SvgItemTableSeat(
     props: SvgItemTableSeatComponentProps
 ) {
-    let guestNameTextDOM: SVGTextElement;
-    let meassureTextDOM: SVGTextElement;
-
     const baseNameTextSize = 12;
 
     const context = useSvgDrawerContext();
@@ -28,7 +25,7 @@ export function SvgItemTableSeat(
 
         return null;
     });
-    const [nameFontSize, setNameFontSize] = createSignal(baseNameTextSize);
+
     const parentTable = createMemo(() => context.items[props.item.parent?.id]);
     const item = props.item;
 
@@ -49,37 +46,120 @@ export function SvgItemTableSeat(
         context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
     }
 
-    createEffect(() => {
-        if(seatedGuest()?.name && meassureTextDOM) {
+    const ArcText = (props: { 
+        text: string,
+        size: number,
+        meassured_size?: (value: number) => void,
+        y_offset?: number
+    }) => {
+        let meassureTextDOM: SVGTextElement;
+        let textArcDOM: SVGPathElement;
+
+        const pathId = createMemo(() => `seat_text_arc_${props.text.replace(/\s+/g, '_')}`);
+        const yOffset = createMemo(() => props.y_offset || 0);
+        const [fontSize, setFontSize] = createSignal(props.size);
+
+        createEffect(() => {
+            props.text;
+            
+            if(!meassureTextDOM || !textArcDOM) {
+                return;
+            }
+
             const textLength = meassureTextDOM.getComputedTextLength();
+            const pathLength = textArcDOM.getTotalLength();
 
-            const path = document.querySelector("#seat_guest_text_arc") as SVGPathElement;
-            if(path) {
-                const pathLength = path.getTotalLength();
-
-                if(textLength > pathLength) {
-                    const scalar = pathLength / textLength;
-                    setNameFontSize(baseNameTextSize * scalar);
-                } else {
-                    setNameFontSize(baseNameTextSize);
-                }
+            if(textLength > pathLength) {
+                const scalar = pathLength / textLength;
+                setFontSize(props.size * scalar);
+                props.meassured_size?.(props.size * scalar);
             } else {
-                console.warn("Can't find path for seat text!");
+                setFontSize(props.size);
+                props.meassured_size?.(props.size);
+            }
+        });
+
+        return (
+            <>
+                <defs>
+                    <path
+                        ref={textArcDOM}
+
+                        id={pathId()}
+                        fill="none"
+                        stroke="red"
+                        d={`M 0, ${-yOffset()} a ${item.props.radius * 2} ${item.props.radius * 2} 0 0 1 ${item.props.radius * 2} 0`}
+                    />
+                </defs>
+
+                <text
+                    ref={meassureTextDOM}
+                    font-size={props.size.toString()}
+                    font-weight="regular"
+
+                    visibility="hidden"
+                >
+                    {props.text}
+                </text>
+
+                <text
+                    font-size={fontSize().toString()}
+                    font-weight="regular"
+                    text-anchor="middle"
+                    
+                    fill="#2E2A26"
+                >
+                    <textPath 
+                        startOffset="50%"
+                        href={`#${pathId()}`}
+                    >
+                        {props.text}
+                    </textPath>
+                </text>
+            </>
+        );
+    };
+
+    const FullNameText = (
+        props: { name: string, surname: string, size: number }
+    ) => {
+        const [finalSize, setFinalSize] = createSignal(props.size);
+
+        createEffect(() => {
+            props.name; props.surname; props.size;
+
+            untrack(() => {
+                setFinalSize(props.size);
+            })
+        })
+
+        const onMeassuredSizeUpdate = (value: number) => {
+            if(value < finalSize()) {
+                setFinalSize(value);
             }
         }
-    });
+        
+        return (
+            <>
+                <ArcText
+                    text={props.name}
+                    size={finalSize()}
+                    meassured_size={onMeassuredSizeUpdate}
+                    y_offset={finalSize()}
+                />
+                <ArcText
+                    text={props.surname}
+                    size={finalSize()}
+                    meassured_size={onMeassuredSizeUpdate}
+                    y_offset={0}
+                />
+            </>
+        )
+    }
 
     const SeatedIndicator = () => {
         return (
             <>
-                <defs>
-                    <path 
-                        id="seat_guest_text_arc"
-                        fill="none"
-                        stroke="red"
-                        d={`M 0, ${-0} a ${item.props.radius * 2} ${item.props.radius * 2} 0 0 1 ${item.props.radius * 2} 0`}
-                    />
-                </defs>
                 <circle
                     cx={props.item.props.radius}
                     cy={props.item.props.radius}
@@ -95,32 +175,11 @@ export function SvgItemTableSeat(
                     y={0}
                 />
 
-                <text
-                    ref={meassureTextDOM}
-                    font-size={baseNameTextSize.toString()}
-                    font-weight="regular"
-
-                    visibility="hidden"
-                >
-                    {seatedGuest().name}
-                </text>
-
-
-                <text
-                    ref={guestNameTextDOM}
-                    font-size={nameFontSize().toString()}
-                    font-weight="regular"
-                    text-anchor="middle"
-                    
-                    fill="#2E2A26"
-                >
-                    <textPath 
-                        startOffset="50%"
-                        href="#seat_guest_text_arc"
-                    >
-                        {seatedGuest().name}
-                    </textPath>
-                </text>
+                <FullNameText
+                    name={seatedGuest()?.name || ""}
+                    surname={seatedGuest()?.surname || ""}
+                    size={baseNameTextSize}
+                />
             </>
         )
     };
