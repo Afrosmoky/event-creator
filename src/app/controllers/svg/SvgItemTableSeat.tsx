@@ -1,9 +1,6 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps } from "./SvgItem";
 import { createEffect, createMemo, createSignal, Match, Show, Switch, untrack } from "solid-js";
-import { CircleUserRound } from "lucide-solid";
-import { createDroppable } from "@thisbeyond/solid-dnd";
-import { SvgIcon } from "./SvgItemIcon";
 import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 
 interface SvgItemTableSeatComponentProps {
@@ -13,7 +10,7 @@ interface SvgItemTableSeatComponentProps {
 export function SvgItemTableSeat(
     props: SvgItemTableSeatComponentProps
 ) {
-    const baseNameTextSize = 12;
+    const baseNameTextSize = 10;
 
     const context = useSvgDrawerContext();
     const seatedGuest = createMemo(() => {
@@ -168,12 +165,14 @@ export function SvgItemTableSeat(
                 />
 
                 <GuestIcon guest={seatedGuest()} radius={props.item.props.radius} />
-                <GuestDietIcon 
-                    guest={seatedGuest()} 
-                    radius={props.item.props.radius / 2} 
-                    x={-props.item.props.radius / 2 + 2}
-                    y={0}
-                />
+                {context.showDietaryIcons() && (
+                    <GuestDietIcon 
+                        guest={seatedGuest()} 
+                        radius={props.item.props.radius / 2} 
+                        x={-props.item.props.radius / 2 + 2}
+                        y={0}
+                    />
+                )}
 
                 <FullNameText
                     name={seatedGuest()?.name || ""}
@@ -245,7 +244,7 @@ export function SvgItemTableSeat(
                         translate(${props.item.parent?.x} ${props.item.parent?.y})
                         rotate(${props.item.parent?.angle} ${-props.item.x + props.item.props.radius} ${-props.item.y + props.item.props.radius})
                     ` + (seatedGuest() 
-                        ? `rotate(${props.item.props.table_angle} ${props.item.props.radius} ${props.item.props.radius})` 
+                        ? `rotate(${parentTable().props.seat_facing == 0 ? props.item.props.table_angle : 0} ${props.item.props.radius} ${props.item.props.radius})` 
                         : `rotate(${-props.item.parent?.angle} ${props.item.props.radius} ${props.item.props.radius})`)}
 
                     on:pointerdown={onContentClick}

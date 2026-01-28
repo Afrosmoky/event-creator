@@ -29,7 +29,7 @@ export function createItemPolling(
 			if(!diff) {
 				canvas.removeItem(id, false);
 			} else if(!canvas.items[id]) { // add
-				canvas.addItem(id, createItemFromBackend(diff), false);
+				canvas.addItem(id, createItemFromBackend(state[id]), false);
 			} else { // mod
 				const localDiff = decodeBackendElement(diff);
 				if(!localDiff) {

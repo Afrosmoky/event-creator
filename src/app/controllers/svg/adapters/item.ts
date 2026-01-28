@@ -9,7 +9,8 @@ const backendTypeToBlueprint = {
     ["TABLE_CIRCLE"]: SvgItems.TABLE_CIRCLE,
     ["TABLE_T"]: SvgItems.TABLE_T,
     ["TABLE_U"]: SvgItems.TABLE_U,
-    ["ICON"]: SvgItems.ICON
+    ["ICON"]: SvgItems.ICON,
+    ["TEXT"]: SvgItems.TEXT
 } as { [key: string]: SvgItemBlueprint }; 
 
 export function decodeBackendElement(element: DeepPartial<API.Element>) {
@@ -34,6 +35,14 @@ export function decodeBackendElement(element: DeepPartial<API.Element>) {
     assign(props, "label", element.name, str);
     assign(props, "icon", element.icon, str);
     assign(props, "show_unseated", element.config?.show_unseated, bool);
+
+    assign(props, "border_color", element.config?.border_color, color);
+    assign(props, "border_width", element.config?.border_width, num);
+    assign(props, "name_color", element.config?.name_color, color);
+    assign(props, "name_font_size", element.config?.name_font_size, num);
+    assign(props, "name_bold", element.config?.name_bold, bool);
+    assign(props, "name_italic", element.config?.name_italic, bool);
+    assign(props, "seat_facing", element.config?.seat_facing, num);
 
     if(Object.keys(props).length > 0) {
         item.props = props;
@@ -67,6 +76,14 @@ export function encodeClientItem(item: DeepPartial<SvgItem>) {
     assign(config, "arms_width", item.props?.arms_width, num);
     assign(config, "bottom_height", item.props?.bottom_height, num);
     assign(config, "show_unseated", item.props?.show_unseated, bool);
+
+    assign(config, "border_color", item.props?.border_color, color);
+    assign(config, "border_width", item.props?.border_width, num);
+    assign(config, "name_color", item.props?.name_color, color);
+    assign(config, "name_font_size", item.props?.name_font_size, num);
+    assign(config, "name_bold", item.props?.name_bold, bool);
+    assign(config, "name_italic", item.props?.name_italic, bool);
+    assign(config, "seat_facing", item.props?.seat_facing, num);
 
     if(Object.keys(config).length > 0) {
         element.config = config;

@@ -181,17 +181,37 @@ export function SvgItemTableCircle(
 
     return (
         <>
+            <defs>
+                <clipPath id={`table_clip_${props.item.id}`}>
+                    <circle 
+                        cx={state.radius()}
+                        cy={state.radius()}
+                        r={state.radius()}
+                    ></circle>
+                </clipPath>
+            </defs>
+
             <circle 
-                fill={props.item.props?.color || "var(--color-primary-soft)"}
+                fill={props.item.props?.color}
+                stroke={props.item.props?.border_color}
+                stroke-width={(props.item.props?.border_width ?? 2) * 2}
+
                 cx={state.radius()}
                 cy={state.radius()}
                 r={state.radius()}
+                
+                clip-path={`url(#table_clip_${props.item.id})`}
+
                 on:pointerup={onPointerUp}
             ></circle>
 
             <text
                 x={state.radius()}
-                y={state.radius() + 6}
+                y={state.radius() + (props.item.props.name_font_size / 3)}
+                font-size={`${props.item.props.name_font_size}px`}
+                fill={props.item.props.name_color}
+                font-weight={props.item.props.name_bold ? "bold" : "normal"}
+                font-style={props.item.props.name_italic ? "italic" : "normal"}
                 text-anchor="middle"
             >
                 {props.item.props.name}

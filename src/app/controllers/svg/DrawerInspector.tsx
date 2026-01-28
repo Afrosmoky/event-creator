@@ -1,11 +1,12 @@
 import { createEffect, createMemo, Match, Show, Switch } from "solid-js";
-import { cloneSvgItem, SvgItem, SvgItemTableProps, SvgItemType } from "./SvgItem";
+import { cloneSvgItem, isSvgItemText, SvgItem, SvgItemTableProps, SvgItemType } from "./SvgItem";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { Inspector, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
 import ItemTableInspector from "./ItemTableInspector";
 import { CopyIcon, Trash2Icon } from "lucide-solid";
 import ItemIconInspector from "./ItemIconInspector";
 import TableSeatInspector from "./TableSeatInspector";
+import ItemTextInspector from "./ItemTextInspector";
 
 export default function DrawerInspector(
     props: unknown
@@ -50,7 +51,10 @@ export default function DrawerInspector(
                             isIcon(focusedItem())
                             ? "Ikona " : 
                             isSeat(focusedItem())
-                            ? "Krzesło " : "Nieznany "
+                            ? "Krzesło " : 
+                            isSvgItemText(focusedItem())
+                            ? "Tekst " :
+                            "Nieznany "
                         }
                     </span>
                     <span class="text-xs italic font-normal text-foreground-muted">
@@ -68,6 +72,9 @@ export default function DrawerInspector(
                     </Match>
                     <Match when={isSeat(focusedItem())}>
                         <TableSeatInspector item={focusedItem() as any} />
+                    </Match>
+                    <Match when={isSvgItemText(focusedItem())}>
+                        <ItemTextInspector item={focusedItem() as any} />
                     </Match>
                 </Switch>
             </InspectorContent>

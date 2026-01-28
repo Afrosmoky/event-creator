@@ -29,7 +29,7 @@ export function createSeatPolling(
 			if(!value) {
 				canvas.removeSeat(id, false);
 			} else if(!canvas.seatsMap[id]) {
-				const local = createSeatFromBackend(value);
+				const local = createSeatFromBackend(state[id]);
 				console.log(`Seat ${id} created from backend: `);
 				canvas.addSeat(id, local, false);
 			} else {

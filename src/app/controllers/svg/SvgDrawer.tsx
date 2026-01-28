@@ -4,6 +4,7 @@ import { createStore } from 'solid-js/store';
 import { useSvgDrawerContext } from '@/app/context/SvgDrawerContext';
 import { SvgItemFocus } from './SvgItemFocus';
 import { createResizeObserver } from '@solid-primitives/resize-observer';
+import { SvgLogo } from './SvgLogo';
 
 export function SvgDrawer(
 ) {
@@ -123,8 +124,22 @@ export function SvgDrawer(
                 on:pointermove={onPointerMove}
                 on:pointerup={onPointerUp}
             >
+                <style innerHTML={`
+                    @font-face { 
+                        font-family: "Sora";
+                        font-weight: 100 800;
+                        font-display: swap;
+                        src: url(https://fonts.gstatic.com/s/sora/v17/xMQbuFFYT72XzQUpDqW1KX4.woff2) format('woff2');
+                    }
+
+                    /* Style the text */
+                    text {
+                        /* Specify the system or custom font to use */
+                        font-family: "Sora", sans-serif;
+                        font-optical-sizing: auto;
+                    }
+                `} />
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
-                    
                     <For each={context.itemsArray}>
                         {item => {
                             return (
@@ -133,6 +148,7 @@ export function SvgDrawer(
                         }}
                     </For>
                 </g>
+                <SvgLogo />
             </svg>
 
             <svg class="absolute top-0 left-0 pointer-events-none" width="100%" height="100%">

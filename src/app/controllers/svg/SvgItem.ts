@@ -148,7 +148,8 @@ export enum SvgItemType {
     TABLE_T = "TABLE_T",
     TABLE_U = "TABLE_U",
     TABLE_SEAT = "TABLE_SEAT",
-    ICON = "ICON"
+    ICON = "ICON",
+    TEXT = "TEXT"
 }
 
 export interface SvgItem<Props = Record<string, any>> {
@@ -173,6 +174,11 @@ export enum SvgItemTableType {
     LETTER_T,
     LETTER_U
 };
+
+export enum SvgItemTableSeatFacing {
+    TABLE = 0,
+    USER = 1
+}
 
 export const SvgItemTablePropsDef = createTypeProps({
     "name": {
@@ -214,6 +220,43 @@ export const SvgItemTablePropsDef = createTypeProps({
         type: "color",
         name: "prop_bg_color",
         default: "#9B1B48"
+    },
+    "border_color": {
+        type: "color",
+        name: "prop_border_color",
+        default: "#2E2A26"
+    },
+    "border_width": {
+        type: "number",
+        name: "prop_border_width",
+        default: 4,
+        min: 0
+    },
+    "name_color": {
+        type: "color",
+        name: "prop_name_color",
+        default: "#FFFFFF"
+    },
+    "name_font_size": {
+        type: "number",
+        name: "prop_name_font_size",
+        default: 16,
+        min: 8
+    },
+    "name_bold": {
+        type: "bool",
+        name: "prop_name_bold",
+        default: false
+    },
+    "name_italic": {
+        type: "bool",
+        name: "prop_name_italic",
+        default: false
+    },
+    "seat_facing": {
+        type: SvgItemTableSeatFacing,
+        name: "prop_seat_orientation",
+        default: SvgItemTableSeatFacing.TABLE
     }
 });
 
@@ -347,6 +390,41 @@ export function isSvgItemIcon(item: SvgItem<any>): item is SvgItem<SvgItemIconPr
     return item.kind === "ICON";
 }
 
+export const SvgItemTextPropsDef = createTypeProps({
+    "name": {
+        type: "string",
+        name: "prop_name",
+        default: ""
+    },
+    "name_font_size": {
+        type: "number",
+        name: "prop_font_size",
+        default: 16,
+        min: 8
+    },
+    "name_bold": {
+        type: "bool",
+        name: "prop_bold",
+        default: false
+    },
+    "name_italic": {
+        type: "bool",
+        name: "prop_italic",
+        default: false
+    },
+    "name_color": {
+        type: "color",
+        name: "prop_color",
+        default: "#000000"
+    }
+})
+
+export type SvgItemTextProps = PropsFromDescriptor<typeof SvgItemTextPropsDef>;
+
+export function isSvgItemText(item: SvgItem<any>): item is SvgItem<SvgItemTextProps> {
+    return item.kind === "TEXT";
+}
+
 export const SvgItems = {
     TABLE_RECT: {
         type: "TABLE_RECT",
@@ -371,15 +449,9 @@ export const SvgItems = {
     ICON: {
         type: "ICON",
         props: SvgItemIconPropsDef
+    },
+    TEXT: {
+        type: "TEXT",
+        props: SvgItemTextPropsDef
     }
 } as const satisfies { [key: string]: SvgItemBlueprint };
-
-export class ItemTableCircleModel {
-    readonly context;
-
-    constructor(
-        private get: () => SvgItem<SvgItemTableCircleProps>
-    ) {
-        this.context = useSvgDrawerContext();
-    }
-}

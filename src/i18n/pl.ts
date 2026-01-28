@@ -9,6 +9,7 @@ export const dict = {
     category_attractions: "Atrakcje",
     category_infrastructure: "Infrastruktura",
     category_layout: "Plan przestrzeni",
+    category_text: "Tekst",
     rect_table: "Stół Kwadratowy",
     t_table: "Stół T",
     u_table: "Stół U",

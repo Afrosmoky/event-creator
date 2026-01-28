@@ -333,6 +333,7 @@ export const makeSvgDrawerContext = () => {
     const [seatPatches, setSeatPatches] = createStore<SeatPatch[]>([]);
     const [clientWidth, setClientWidth] = createSignal(0);
     const [clientHeight, setClientHeight] = createSignal(0);
+    const [showDietaryIcons, setShowDietaryIcons] = createSignal(true);
 
     const [guestPatches, setGuestPatches] = createStore<GuestPatch[]>([]);
     
@@ -486,7 +487,7 @@ export const makeSvgDrawerContext = () => {
         }
     }
 
-    function addSeat(id: number, seat: SeatClient, emitPatch: boolean = true) {
+    function addSeat(id: number | undefined, seat: SeatClient, emitPatch: boolean = true) {
         const patch: SeatPatch = {
             type: "add",
             id: id ?? (1_000_000 + seat_nonce++),
@@ -563,8 +564,8 @@ export const makeSvgDrawerContext = () => {
                     guest_id: guest_id
                 });
             } else {
-                addSeat(0, {
-                    id: 0,
+                addSeat(undefined, {
+                    id: undefined,
                     guest_id: guest_id,
                     table_id: table_id,
                     seat_index: seat_index
@@ -620,6 +621,7 @@ export const makeSvgDrawerContext = () => {
         draggingGuest, setDraggingGuest,
         draggingGroup, setDraggingGroup,
         seatGuest, unseatGuest, isGuestSeated, unseatAllGuests,
+        showDietaryIcons, setShowDietaryIcons,
 
         patches, seatPatches,
         clearPatches,

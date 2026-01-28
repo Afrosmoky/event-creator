@@ -233,17 +233,40 @@ export function SvgItemTable(
         });
     }
 
+    createEffect(() => {
+        console.log(props.item.props.name_italic)
+    })
+
     return (
         <>
+            <defs>
+                <clipPath id={`table_clip_${item.id}`}>
+                    <polygon 
+                        points={state.points.map(p => `${p.x},${p.y}`).join(" ")}
+                    />
+                </clipPath>
+            </defs>
+
             <polygon 
-                fill={item.props?.color || "#aaaaaa"}
+                id={`table_polygon_${item.id}`}
                 points={state.points.map(p => `${p.x},${p.y}`).join(" ")}
+                
+                fill={item.props?.color || "#aaaaaa"}
+                stroke={item.props?.border_color || "#000000"}
+                stroke-width={(item.props?.border_width ?? 2) * 2}
+                
+                clip-path={`url(#table_clip_${item.id})`}
+                
                 on:pointerup={onPointerUp}
             />
 
             <text
                 x={item.w / 2}
                 y={titleY()}
+                fill={item.props?.name_color}
+                font-weight={item.props?.name_bold ? "bold" : "normal"}
+                font-style={item.props?.name_italic ? "italic" : "normal"}
+                font-size={`${item.props?.name_font_size}px`}
                 text-anchor="middle"
             >
                 {item.props.name}

@@ -259,11 +259,13 @@ export function SvgItemFocus(
             
 
             <Show when={props.item.kind != SvgItemType.TABLE_SEAT}>
-                <ControlResizePoint 
-                    x={x() + width()}
-                    y={y() + height() / 2}
-                    type="W"
-                />
+                <Show when={props.item.kind != SvgItemType.TEXT}>
+                    <ControlResizePoint 
+                        x={x() + width()}
+                        y={y() + height() / 2}
+                        type="W"
+                    />
+                </Show>
 
                 <Show when={props.item.kind == SvgItemType.TABLE_CIRCLE}>
                     <ControlRotatePoint
@@ -279,7 +281,7 @@ export function SvgItemFocus(
                     />
                 </Show>
 
-                <Show when={props.item.kind != SvgItemType.TABLE_CIRCLE && props.item.kind != SvgItemType.ICON}>
+                <Show when={props.item.kind != SvgItemType.TABLE_CIRCLE && props.item.kind != SvgItemType.ICON && props.item.kind != SvgItemType.TEXT}>
                     <ControlResizePoint
                         x={x() + width() / 2}
                         y={y() + height()}

@@ -52,7 +52,15 @@ namespace API {
             bottom_height: number,
             top_height: number,
             bottom_width: number,
-            show_unseated: boolean
+            show_unseated: boolean,
+
+            border_color: string,
+            border_width: number,
+            name_color: string,
+            name_font_size: number,
+            name_bold: boolean,
+            name_italic: boolean,
+            seat_facing: number
         },
 
         created_at: string,
@@ -162,6 +170,10 @@ namespace API {
             "PUT",
             { note: note }
         );
+    }
+
+    export function export_guests_csv_url(ballroom_id: string) {
+        return BASE_URL + `/guest/export/${ballroom_id}`;
     }
 
     /**

@@ -1,10 +1,11 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { Match, Switch } from "solid-js";
-import { cloneSvgItem, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SvgItem, SvgItemTableProps, SvgItemType } from "./SvgItem";
+import { cloneSvgItem, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SvgItem, SvgItemTableProps, SvgItemTableSeatFacing, SvgItemType } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
-import { CopyIcon, EyeIcon, EyeOffIcon, Trash2Icon, UnlinkIcon } from "lucide-solid";
+import { Bold, CopyIcon, EyeIcon, EyeOffIcon, Italic, Trash2Icon, UnlinkIcon } from "lucide-solid";
 import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle } from "./InspectorPresets";
 import PropertyInput from "./PropertyInput";
+import { Button } from "./UI";
 
 interface ItemTableInspectorProps {
     item: SvgItem<SvgItemTableProps>;
@@ -196,12 +197,126 @@ export default function ItemTableInspector(
                 <InspectorCategoryTitle>
                     Wygląd
                 </InspectorCategoryTitle>
+                
+                <div class="flex gap-2 items-end">
+                    <PropertyInput
+                        class="grow"
+
+                        title="Rozmiar i styl nazwy"
+                        type="number"
+                        min={8}
+                        value={[
+                            props.item.props.name_font_size,
+                            value => context.modifyItem(props.item.id, { props: { name_font_size: value }})
+                        ]}
+                    />
+
+                    <Button 
+                        class="h-9.5 text-foreground-muted"
+                        classList={{
+                            "text-foreground!": props.item.props.name_bold
+                        }}
+                        onClick={() => {
+                            context.modifyItem(props.item.id, {
+                                props: {
+                                    name_bold: !props.item.props.name_bold
+                                }
+                            });
+                        }}
+                    >
+                        <Bold height={18} width={18} />
+                    </Button>
+
+                    <Button 
+                        class="h-9.5 text-foreground-muted"
+                        classList={{
+                            "text-foreground!": props.item.props.name_italic
+                        }}
+                        onClick={() => {
+                            context.modifyItem(props.item.id, {
+                                props: {
+                                    name_italic: !props.item.props.name_italic
+                                }
+                            });
+                        }}
+                    >
+                        <Italic height={18} width={18} />
+                    </Button>
+                </div>
+                
+
+                <PropertyInput
+                    title="Grubość ramki"
+                    type="number"
+                    min={0}
+                    value={[
+                        props.item.props.border_width,
+                        value => context.modifyItem(props.item.id, { props: { border_width: value }})
+                    ]}
+                />
+
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs pl-1 italic text-foreground-muted">
+                        Orientacja krzeseł
+                    </label>
+                    <div class="flex gap-2">
+                        <Button 
+                            class="flex-1 h-9.5 text-foreground-muted"
+                            classList={{
+                                "text-foreground!": props.item.props.seat_facing === SvgItemTableSeatFacing.TABLE
+                            }}
+                            onClick={() => {
+                                context.modifyItem(props.item.id, {
+                                    props: {
+                                        seat_facing: SvgItemTableSeatFacing.TABLE
+                                    }
+                                });
+                            }}
+                        >
+                            Stół
+                        </Button>
+                        <Button 
+                            class="flex-1 h-9.5 text-foreground-muted"
+                            classList={{
+                                "text-foreground!": props.item.props.seat_facing === SvgItemTableSeatFacing.USER
+                            }}
+                            onClick={() => {
+                                context.modifyItem(props.item.id, {
+                                    props: {
+                                        seat_facing: SvgItemTableSeatFacing.USER
+                                    }
+                                });
+                            }}
+                        >
+                            Użytkownik
+                        </Button>
+                    </div>
+                </div>
+
                 <PropertyInput
                     title="Kolor stołu"
                     type="color"
                     value={[
                         props.item.props.color,
                         value => context.modifyItem(props.item.id, { props: { color: value }})
+                    ]}
+                />
+
+                <PropertyInput
+                    title="Kolor ramki"
+                    type="color"
+                    value={[
+                        props.item.props.border_color,
+                        value => context.modifyItem(props.item.id, { props: { border_color: value }})
+                    ]}
+                />
+
+                <PropertyInput
+                    title="Kolor nazwy"
+                    type="color"
+                    value={[
+                        props.item.props.name_color,
+                        value => context.modifyItem(props.item.id, { props: { name_color: value }})
                     ]}
                 />
             </InspectorCategory>
@@ -245,6 +360,12 @@ export default function ItemTableInspector(
                     <p>Usuń</p>
                 </button>
             </div>
+            {/*<div class="absolute top-1 right-1 text-xs text-muted-foreground bg-white px-2 py-1">
+                <p>JSON: </p>
+                <div class="max-h-32 overflow-y-auto">
+                    <pre>{JSON.stringify(props.item, null, 2)}</pre>
+                </div>
+            </div>*/}
         </>
     );
 }

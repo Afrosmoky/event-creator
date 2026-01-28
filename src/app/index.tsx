@@ -6,7 +6,7 @@ import { createStore, produce } from 'solid-js/store';
 import { useSearchParams } from '@solidjs/router';
 import DrawerInspector from './controllers/svg/DrawerInspector';
 import GuestListPanel from './controllers/svg/GuestListPanel';
-import { UsersRoundIcon } from 'lucide-solid';
+import { UsersRoundIcon, Vegan } from 'lucide-solid';
 import { createGuestSync } from './controllers/svg/sync/guest-sync';
 import { createGuestPolling } from './controllers/svg/polling/guest-polling';
 import { createItemController } from './controllers/svg/controllers/item-controller';
@@ -67,10 +67,10 @@ export function App() {
 			<SvgDrawer></SvgDrawer>
 			<DrawerInspector />
 			<GuestListPanel show={showGuestList()} />
-			<div class="absolute top-1 right-1 flex flex-col gap-2">
+			<div class="absolute top-1 right-1 flex flex-col items-end gap-2">
 				<button 
 					class="
-						rounded-sm w-full px-4 py-2 text-sm border-border border bg-primary-soft text-foreground cursor-pointer
+						rounded-sm px-4 py-2 text-sm border-border border bg-primary-soft text-foreground cursor-pointer
 						flex gap-2 items-center justify-center
 					"
 					onClick={() => setShowGuestList(!showGuestList())}
@@ -79,8 +79,22 @@ export function App() {
 					<label class="pointer-events-none">Goście</label>
 				</button>
 			</div>
+			<div class="absolute bottom-1 right-1">
+				<button
+					class="
+						rounded-sm px-4 py-2 text-sm border-border border bg-primary-soft text-foreground cursor-pointer
+						flex gap-2 items-center justify-center
+					"
+					onClick={() => canvas.setShowDietaryIcons(!canvas.showDietaryIcons())}
+				>
+					<Vegan stroke-width={1.5} height={20} width="auto"/>
+					<label class="pointer-events-none">
+						{canvas.showDietaryIcons() ? "Ukryj ikony dietetyczne" : "Pokaż ikony dietetyczne"}
+					</label>
+				</button>
+			</div>
 			<div class="absolute top-1 bottom-1 left-0 p-2 border-r border-border bg-card rounded-r-md shadow-black/20 shadow-sm">
-				<AppBottomMenu />
+				<AppBottomMenu ballroom_id={ballroomId()} />
 			</div>
 			<Show when={draggingGuestObj()}>
 				<GuestDragOverlay guest={draggingGuestObj()} />

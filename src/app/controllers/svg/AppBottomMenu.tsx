@@ -2,10 +2,11 @@ import { useI18nContext } from "@/app/context/I18nContext";
 import { createSignal, For, Match, onCleanup, onMount, Switch } from "solid-js";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { createPngBlobFromSvg, createSvgBlobFromSvg, openBlobInWindow, saveBlobToFile } from "@/app/utils/svg";
-import { CircleUserIcon, DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRoundIcon } from "lucide-solid";
+import { CircleUserIcon, DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, UsersRoundIcon } from "lucide-solid";
 import { createSvgItemFromBlueprint, SvgItems, type SvgItemBlueprint } from "./SvgItem";
 import { SPRITES_META } from "@/sprite.gen";
 import { SvgIcon } from "./SvgItemIcon";
+import API from "@/app/api/API";
 
 interface SideMenuItem {
     blueprint: SvgItemBlueprint,
@@ -239,11 +240,22 @@ const config: SideMenuConfig = {
                     }
                 }
             ]
+        },
+        {
+            name: "category_text",
+            items: [
+                {
+                    blueprint: SvgItems.TEXT,
+                    icon: "label"
+                }
+            ]
         }
     ]
 };
 
-export function AppBottomMenu() {
+export function AppBottomMenu(props: {
+    ballroom_id: string
+}) {
     let exportControlDOM: HTMLDivElement = null!;
 
     const i18n = useI18nContext();
@@ -293,6 +305,13 @@ export function AppBottomMenu() {
 		saveBlobToFile(url, type);
 		setShowExportPicker(false);
 	}
+
+    async function downloadGuestsCsv() {
+        const url = API.export_guests_csv_url(props.ballroom_id);
+        window.open(url, "_blank");
+
+        setShowExportPicker(false);
+    }
 
     async function createSvgItemFromPicker(config: SideMenuItem) {
         let item = createSvgItemFromBlueprint(config.blueprint);
@@ -380,7 +399,7 @@ export function AppBottomMenu() {
                                 </div>
                             </div>
                             <div
-                                class="pt-2 px-1 font-semibold"
+                                class="border-border border-b-2 border-dashed pb-2 pt-2 px-1 font-semibold"
                             >
                                 <div class="flex items-center justify-between py-1">
                                     <div class="flex gap-1">
@@ -396,6 +415,23 @@ export function AppBottomMenu() {
                                         <button 
                                             class="rounded-md p-2 bg-primary-soft border-border border cursor-pointer"
                                             on:click={() => downloadBlob("png")}>
+                                            <DownloadIcon width="16" height="16" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="pt-2 px-1 font-semibold"
+                            >
+                                <div class="flex items-center justify-between py-1">
+                                    <div class="flex gap-1">
+                                        <UsersRound />
+                                        <label class="pl-1">Goście</label>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button 
+                                            class="rounded-md p-2 bg-primary-soft border-border border cursor-pointer"
+                                            on:click={() => downloadGuestsCsv()}>
                                             <DownloadIcon width="16" height="16" />
                                         </button>
                                     </div>

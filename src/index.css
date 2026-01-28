@@ -46,6 +46,16 @@ html, body {
   display: none;               /* Chrome, Safari */
 }
 
+.logo {
+  display: none !important;
+}
+
+text {
+  /* Prioritizes geometry over readability */
+  text-rendering: geometricPrecision; 
+  shape-rendering: geometricPrecision;
+}
+
 @layer base {
   /* All buttons */
   button {

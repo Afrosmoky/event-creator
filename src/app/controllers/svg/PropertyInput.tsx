@@ -9,13 +9,15 @@ import { SPRITES_META, VALID_ICONS } from "@/sprite.gen";
 interface PropertyInputProps {
     title: string,
     type: "number" | "string" | "color" | "icon" | EnumLike,
+    multiline?: boolean,
     theme?: "normal" | "slider" | "standout",
     placeholder?: string,
     item?: SvgItem,
     value: [any, (value: any) => void],
     is_int?: boolean,
     min?: number,
-    max?: number
+    max?: number,
+    class?: string
 }
 
 export default function PropertyInput(
@@ -116,7 +118,7 @@ export default function PropertyInput(
     }
 
     return (
-        <div class="flex flex-col items-start gap-1 text-sm">
+        <div class={`flex flex-col items-start gap-1 text-sm ${props.class ?? ""}`}>
             <Show when={props.type != "color"}>
                 <label class="text-xs pl-1 italic text-foreground-muted">
                     {i18n.t(props.title as any) ?? props.title}
@@ -124,9 +126,15 @@ export default function PropertyInput(
             </Show>
             <div class="w-full text-foreground" ref={dom}>
                 <Show when={props.type == "string"}>
-                    <input 
-                        class="w-full rounded-md h-full bg-primary-soft border-border border px-3 py-2 outline-accent focus:outline-2"
-                        value={formattedValue()} onInput={onInput} placeholder={props.placeholder} type="text"></input>
+                    {props.multiline ? (
+                        <textarea 
+                            class="w-full rounded-md bg-primary-soft border-border border px-3 py-2 outline-accent focus:outline-2 resize-y"
+                            value={formattedValue()} onInput={onInput} placeholder={props.placeholder}></textarea>
+                    ) : (
+                        <input 
+                            class="w-full rounded-md h-full bg-primary-soft border-border border px-3 py-2 outline-accent focus:outline-2"
+                            value={formattedValue()} onInput={onInput} placeholder={props.placeholder} type="text"></input>
+                    )}
                 </Show>
                 <Show when={props.type == "number"}>
                     <Switch>

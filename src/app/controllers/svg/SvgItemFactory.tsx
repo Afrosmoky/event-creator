@@ -5,6 +5,7 @@ import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItemIcon } from "./SvgItemIcon";
 import { SvgItemTableCircle } from "./SvgItemTableCircle";
 import { SvgItemTableSeat } from "./SvgItemTableSeat";
+import { SvgItemText } from "./SvgItemText";
 
 export interface SvgItemFactoryProps {
     item: SvgItem<any>;
@@ -76,27 +77,26 @@ export function SvgItemFactory(
             on:pointermove={onContainerPointerMove}
             on:pointerup={onContainerPointerUp}
         >
-            <g
-                transform={``}
-            >
-                <Switch>
-                    <Match when={props.item.kind === "TABLE_RECT" || props.item.kind === "TABLE_T" || props.item.kind === "TABLE_U"}>
-                        <SvgItemTable item={props.item}/>
-                    </Match>
-                    <Match when={props.item.kind === "TABLE_CIRCLE" }>
-                        <SvgItemTableCircle item={props.item} />
-                    </Match>
-                    <Match when={props.item.kind === "ICON"}>
-                        <SvgItemIcon item={props.item}/>
-                    </Match>
-                    <Match when={props.item.kind == SvgItemType.TABLE_SEAT}>
-                        <SvgItemTableSeat item={props.item}/>
-                    </Match>
-                    <Match when={true}>
-                        <div>Unknown item kind</div>
-                    </Match>
-                </Switch>
-            </g>
+            <Switch>
+                <Match when={props.item.kind === "TABLE_RECT" || props.item.kind === "TABLE_T" || props.item.kind === "TABLE_U"}>
+                    <SvgItemTable item={props.item}/>
+                </Match>
+                <Match when={props.item.kind === "TABLE_CIRCLE" }>
+                    <SvgItemTableCircle item={props.item} />
+                </Match>
+                <Match when={props.item.kind === "ICON"}>
+                    <SvgItemIcon item={props.item}/>
+                </Match>
+                <Match when={props.item.kind == SvgItemType.TABLE_SEAT}>
+                    <SvgItemTableSeat item={props.item}/>
+                </Match>
+                <Match when={props.item.kind === SvgItemType.TEXT}>
+                    <SvgItemText item={props.item} />
+                </Match>
+                <Match when={true}>
+                    <div>Unknown item kind</div>
+                </Match>
+            </Switch>
         </g>
     )
 }
