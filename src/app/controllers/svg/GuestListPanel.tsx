@@ -1,9 +1,7 @@
-import { createEffect, createMemo, createSignal, For, Match, Switch } from "solid-js";
+import { createMemo, createSignal, For, Match, Switch } from "solid-js";
 import { Guest, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { Inspector, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
-import { MoveIcon, NotepadTextIcon, PinIcon, Trash2Icon, UnlinkIcon, UserRoundIcon, UsersRoundIcon } from "lucide-solid";
-import { GuestAPIType } from "@/app/api/apiEndpoints";
-import { SvgIcon } from "./SvgItemIcon";
+import { Inspector, InspectorContent, InspectorHead } from "./InspectorPresets";
+import { MoveIcon, NotepadTextIcon, PinIcon, UnlinkIcon, UserRoundIcon, UsersRoundIcon } from "lucide-solid";
 import { Button } from "./UI";
 import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 

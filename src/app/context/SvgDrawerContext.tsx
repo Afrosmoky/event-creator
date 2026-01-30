@@ -1,7 +1,6 @@
 import { batch, createContext, createEffect, createResource, createSignal, onCleanup, onMount, useContext } from "solid-js";
 import type { SvgItem } from "../controllers/svg/SvgItem";
-import { createStore, produce, reconcile, unwrap } from "solid-js/store";
-import { GuestAPIType } from "../api/apiEndpoints";
+import { createStore, produce, unwrap } from "solid-js/store";
 
 export type SvgDrawerContextType = ReturnType<typeof makeSvgDrawerContext>;
 

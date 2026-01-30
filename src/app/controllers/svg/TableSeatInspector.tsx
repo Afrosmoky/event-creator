@@ -1,10 +1,9 @@
 import { Guest, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { SvgItem, SvgItemIconProps, SvgItemTableSeatProps } from "./SvgItem";
+import { SvgItem, SvgItemTableSeatProps } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
-import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
+import { InspectorCategory, InspectorCategoryContent } from "./InspectorPresets";
 import { createMemo, For, Match, Show, Switch } from "solid-js";
-import { GuestAPIType } from "@/app/api/apiEndpoints";
-import { CircleUserRoundIcon, UnlinkIcon } from "lucide-solid";
+import { UnlinkIcon } from "lucide-solid";
 import { GuestIcon } from "./GuestIcon";
 
 interface TableSeatInspectorProps {
