@@ -13,11 +13,15 @@ export function SvgItemText(
     let textDOM: SVGTextElement;
 
     const context = useSvgDrawerContext();
+    const text = createMemo(() => props.item.props.name.trim());
     
     const lineHeight = createMemo(() => props.item.props.name_font_size * 1.2);
     const lines = createMemo(() => {
-        const text = props.item.props.name.trim() || "Pusty tekst";
-        return text.split('\n');
+        if(text().length === 0) {
+            return ["Wpisz dowolny tekst"];
+        } else {
+            return text().split("\n");
+        }
     });
 
     const padding_x = 6;

@@ -117,16 +117,54 @@ export function SvgItemTableSeat(
         );
     };
 
+    const RegularText = (props: { text: string, size: number, x: number, y: number }) => {
+        return (
+            <text
+                x={props.x}
+                y={props.y}
+                font-size={props.size.toString() + "px"}
+                font-weight="regular"
+                text-anchor="middle"
+                
+                fill="#2E2A26"
+            >
+                {props.text}
+            </text>
+        );
+    };
+
     const FullNameText = (
         props: { name: string, surname: string, size: number }
     ) => {
+        let contentDOM: SVGGElement;
+
         const [finalSize, setFinalSize] = createSignal(props.size);
+        const [width, setWidth] = createSignal(0);
+        const [height, setHeight] = createSignal(0);
+
+        const dirX = createMemo(() => {
+            return -Math.cos((item.props.table_angle + 90) * (Math.PI / 180));
+        });
+        const dirY = createMemo(() => {
+            return Math.sin((item.props.table_angle + 90) * (Math.PI / 180));
+        });
 
         createEffect(() => {
             props.name; props.surname; props.size;
 
             untrack(() => {
                 setFinalSize(props.size);
+            })
+        });
+
+        createEffect(() => {
+            props.name; props.surname; props.size;
+
+            untrack(() => {
+                const bbox = contentDOM.getBBox();
+
+                setWidth(bbox.width + 6);
+                setHeight(bbox.height + 12);
             })
         })
 
@@ -135,22 +173,40 @@ export function SvgItemTableSeat(
                 setFinalSize(value);
             }
         }
-        
+
         return (
-            <>
-                <ArcText
-                    text={props.name}
-                    size={finalSize()}
-                    meassured_size={onMeassuredSizeUpdate}
-                    y_offset={finalSize()}
-                />
-                <ArcText
-                    text={props.surname}
-                    size={finalSize()}
-                    meassured_size={onMeassuredSizeUpdate}
-                    y_offset={0}
-                />
-            </>
+            <g ref={contentDOM}>
+                <Switch>
+                    <Match when={item.parent?.props.seat_facing === 0}>
+                        <ArcText
+                            text={props.name}
+                            size={finalSize()}
+                            meassured_size={onMeassuredSizeUpdate}
+                            y_offset={finalSize()}
+                        />
+                        <ArcText
+                            text={props.surname}
+                            size={finalSize()}
+                            meassured_size={onMeassuredSizeUpdate}
+                            y_offset={0}
+                        />
+                    </Match>
+                    <Match when={true}>
+                        <RegularText
+                            text={props.name}
+                            size={props.size}
+                            x={item.props.radius + dirX() * width()}
+                            y={item.props.radius - dirY() * height()}
+                        />
+                        <RegularText
+                            text={props.surname}
+                            size={props.size}
+                            x={item.props.radius + dirX() * width()}
+                            y={item.props.radius + props.size - dirY() * height()}
+                        />
+                    </Match>
+                </Switch>
+            </g>
         )
     }
 
