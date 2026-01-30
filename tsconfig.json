@@ -1,17 +1,26 @@
 {
-	"files": [],
-	"references": [
-		{ "path": "./tsconfig.app.json" },
-		{ "path": "./tsconfig.node.json" }
-	],
-	"compilerOptions": {
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./src/*"]
-		},
-		"types": [
-			"vite-plugin-solid-svg/types",
-			"vite/client"
-		]
-	}
+  "compilerOptions": {
+	"baseUrl": "./",
+	"paths": {
+      "@/*": ["src/*"]
+    },
+
+    // General
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "target": "ESNext",
+
+    // Modules
+    "allowSyntheticDefaultImports": true,
+	"allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+
+    // Type Checking & Safety
+    "strict": false,
+    "types": ["vite/client"]
+  }
 }

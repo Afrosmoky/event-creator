@@ -4,7 +4,7 @@ import { createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch 
 import Slider from "./Slider";
 import { ChevronDownIcon, ChevronUpIcon, MinusIcon, PlusIcon } from "lucide-solid";
 import { isIconAvailable, SvgIcon } from "./SvgItemIcon";
-import { SPRITES_META, VALID_ICONS } from "@/sprite.gen";
+import { VALID_ICONS } from "@/icons";
 
 interface PropertyInputProps {
     title: string,

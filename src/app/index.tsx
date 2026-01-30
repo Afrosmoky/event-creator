@@ -3,7 +3,6 @@ import { AppBottomMenu } from './controllers/svg/AppBottomMenu';
 import { createMemo, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { Guest, useSvgDrawerContext } from './context/SvgDrawerContext';
 import { createStore, produce } from 'solid-js/store';
-import { useSearchParams } from '@solidjs/router';
 import DrawerInspector from './controllers/svg/DrawerInspector';
 import GuestListPanel from './controllers/svg/GuestListPanel';
 import { UsersRoundIcon, Vegan } from 'lucide-solid';
@@ -16,9 +15,11 @@ import { GuestIcon } from './controllers/svg/GuestIcon';
 let DEV = false;
 
 export function App() {
-	const [searchParams, setSearchParams] = useSearchParams();
+	const searchParams = new URLSearchParams(window.location.search);
+	const ballroomParam = searchParams.get("ballroom");
+
 	const ballroomId = createMemo(() => {
-		return (Array.isArray(searchParams.ballroom) ? searchParams.ballroom[0] : searchParams.ballroom) || "1";
+		return ballroomParam || "1";
 	})
 
 	const [showGuestList, setShowGuestList] = createSignal(false);

@@ -1,10 +1,9 @@
 import { useI18nContext } from "@/app/context/I18nContext";
-import { createSignal, For, Match, onCleanup, onMount, Switch } from "solid-js";
+import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { createPngBlobFromSvg, createSvgBlobFromSvg, openBlobInWindow, saveBlobToFile } from "@/app/utils/svg";
-import { CircleUserIcon, DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, UsersRoundIcon } from "lucide-solid";
+import { DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, UsersRoundIcon } from "lucide-solid";
 import { createSvgItemFromBlueprint, SvgItems, type SvgItemBlueprint } from "./SvgItem";
-import { SPRITES_META } from "@/sprite.gen";
 import { SvgIcon } from "./SvgItemIcon";
 import API from "@/app/api/API";
 
