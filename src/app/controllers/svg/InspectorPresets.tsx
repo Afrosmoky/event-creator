@@ -43,7 +43,7 @@ export function InspectorTitle(props: ParentProps) {
 
 export function InspectorContent(props: ParentProps) {
     return (
-        <div class="grow flex flex-col gap-6 overflow-y-auto overflow-x-hidden p-4">
+        <div class="grow flex flex-col gap-6 overflow-y-auto overflow-x-hidden py-2 px-3">
             {props.children}
         </div>
     );

@@ -1,5 +1,5 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps } from "./SvgItem";
+import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps, SvgItemType } from "./SvgItem";
 import { createEffect, createMemo, createSignal, Match, Show, Switch, untrack } from "solid-js";
 import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 
@@ -117,14 +117,14 @@ export function SvgItemTableSeat(
         );
     };
 
-    const RegularText = (props: { text: string, size: number, x: number, y: number }) => {
+    const RegularText = (props: { text: string, size: number, x: number, y: number, anchor: "start" | "middle" | "end" }) => {
         return (
             <text
                 x={props.x}
                 y={props.y}
                 font-size={props.size.toString() + "px"}
                 font-weight="regular"
-                text-anchor="middle"
+                text-anchor={props.anchor}
                 
                 fill="#2E2A26"
             >
@@ -139,14 +139,30 @@ export function SvgItemTableSeat(
         let contentDOM: SVGGElement;
 
         const [finalSize, setFinalSize] = createSignal(props.size);
-        const [width, setWidth] = createSignal(0);
-        const [height, setHeight] = createSignal(0);
+
+        const anchor = createMemo(() => {
+            let angle = item.props.table_angle;
+
+            if(parentTable().kind == SvgItemType.TABLE_CIRCLE) {
+                if(angle <= 90 || angle >= 270) {
+                    return "start";
+                } else {
+                    return "end";
+                }
+            } else {
+                if((angle >= 0 && angle <= 90) || (angle > 270 && angle < 360)) {
+                    return "start";
+                } else {
+                    return "end";
+                }
+            }
+        })
 
         const dirX = createMemo(() => {
-            return -Math.cos((item.props.table_angle + 90) * (Math.PI / 180));
+            return Math.cos((item.props.table_angle) * (Math.PI / 180));
         });
         const dirY = createMemo(() => {
-            return Math.sin((item.props.table_angle + 90) * (Math.PI / 180));
+            return Math.sin((item.props.table_angle) * (Math.PI / 180));
         });
 
         createEffect(() => {
@@ -157,60 +173,80 @@ export function SvgItemTableSeat(
             })
         });
 
-        createEffect(() => {
-            props.name; props.surname; props.size;
-
-            untrack(() => {
-                const bbox = contentDOM.getBBox();
-
-                setWidth(bbox.width + 6);
-                setHeight(bbox.height + 12);
-            })
-        })
-
         const onMeassuredSizeUpdate = (value: number) => {
             if(value < finalSize()) {
                 setFinalSize(value);
             }
         }
 
+        const length = createMemo(() => {
+            if(parentTable().kind == SvgItemType.TABLE_CIRCLE) {
+                return (item.props.radius + 4);
+            } else {
+                return (item.props.radius + 4);
+            }
+        });
+
+        const x = createMemo(() => {
+            return item.props.radius + dirX() * length();
+        });
+
+        const y = createMemo(() => {
+            return item.props.radius - dirY() * length();
+        });
+
         return (
-            <g ref={contentDOM}>
+            
                 <Switch>
                     <Match when={item.parent?.props.seat_facing === 0}>
-                        <ArcText
-                            text={props.name}
-                            size={finalSize()}
-                            meassured_size={onMeassuredSizeUpdate}
-                            y_offset={finalSize()}
-                        />
-                        <ArcText
-                            text={props.surname}
-                            size={finalSize()}
-                            meassured_size={onMeassuredSizeUpdate}
-                            y_offset={0}
-                        />
+                        <g ref={contentDOM} transform={constructRotateTransform(-item.props.table_angle + 90)}>
+                            <ArcText
+                                text={props.name}
+                                size={finalSize()}
+                                meassured_size={onMeassuredSizeUpdate}
+                                y_offset={finalSize()}
+                            />
+                            <ArcText
+                                text={props.surname}
+                                size={finalSize()}
+                                meassured_size={onMeassuredSizeUpdate}
+                                y_offset={0}
+                            />
+                        </g>
                     </Match>
                     <Match when={true}>
-                        <RegularText
-                            text={props.name}
-                            size={props.size}
-                            x={item.props.radius + dirX() * width()}
-                            y={item.props.radius - dirY() * height()}
-                        />
-                        <RegularText
-                            text={props.surname}
-                            size={props.size}
-                            x={item.props.radius + dirX() * width()}
-                            y={item.props.radius + props.size - dirY() * height()}
-                        />
+                        <g ref={contentDOM} transform={
+                            parentTable().kind != SvgItemType.TABLE_CIRCLE
+                            ? constructRotateTransform(-item.props.table_angle % 180, x(), y())
+                            : constructRotateTransform(-(
+                                item.props.table_angle <= 90 || item.props.table_angle >= 270
+                                ? item.props.table_angle
+                                : (item.props.table_angle + 180) % 360
+                            ), x(), y())
+                        }>
+                            <RegularText
+                                text={props.name}
+                                size={props.size}
+                                x={x()}
+                                y={y()}
+                                anchor={anchor()}
+                            />
+                            <RegularText
+                                text={props.surname}
+                                size={props.size}
+                                x={x()}
+                                y={y() + props.size}
+                                anchor={anchor()}
+                            />
+                        </g>
                     </Match>
                 </Switch>
-            </g>
         )
     }
 
     const SeatedIndicator = () => {
+        const seat_facing = createMemo(() => parentTable().props.seat_facing);
+
         return (
             <>
                 <circle
@@ -220,7 +256,13 @@ export function SvgItemTableSeat(
                     fill-opacity="0"
                 />
 
-                <GuestIcon guest={seatedGuest()} radius={props.item.props.radius} />
+                <g transform={constructRotateTransform(
+                    seat_facing() === 0 ? -props.item.props.table_angle + 90 : -parentTable().angle
+                )}>
+                    <GuestIcon guest={seatedGuest()} radius={props.item.props.radius} />
+                </g>
+                
+                
                 {context.showDietaryIcons() && (
                     <GuestDietIcon 
                         guest={seatedGuest()} 
@@ -291,6 +333,10 @@ export function SvgItemTableSeat(
             </>
         )
     }
+
+    function constructRotateTransform(angle: number, cx: number = props.item.props.radius, cy: number = props.item.props.radius) {
+        return `rotate(${angle} ${cx} ${cy})`;
+    }
     
     return (
         <Switch>
@@ -299,9 +345,7 @@ export function SvgItemTableSeat(
                     transform={`
                         translate(${props.item.parent?.x} ${props.item.parent?.y})
                         rotate(${props.item.parent?.angle} ${-props.item.x + props.item.props.radius} ${-props.item.y + props.item.props.radius})
-                    ` + (seatedGuest() 
-                        ? `rotate(${parentTable().props.seat_facing == 0 ? props.item.props.table_angle : 0} ${props.item.props.radius} ${props.item.props.radius})` 
-                        : `rotate(${-props.item.parent?.angle} ${props.item.props.radius} ${props.item.props.radius})`)}
+                    `}
 
                     on:pointerdown={onContentClick}
                     on:pointerenter={() => setIsHover(true)}

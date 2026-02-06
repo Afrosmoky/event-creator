@@ -30,62 +30,64 @@ export default function ItemIconInspector(
 
     return (
         <>
-            <InspectorCategory>
-                <InspectorCategoryContent>
-                    <PropertyInput
-                        title="prop_name"
-                        type="string"
-                        placeholder="Np. Wentlacja, Mikrofon..."
-                        value={[
-                            props.item.props.label,
-                            value => context.modifyItem(props.item.id, { props: { label: value }})
-                        ]}
-                    />
-                    <PropertyInput
-                        title="Ikona"
-                        type="icon"
-                        value={[
-                            props.item.props.icon,
-                            value => context.modifyItem(props.item.id, { props: { icon: value }})
-                        ]}
-                    />
-                </InspectorCategoryContent>
-            </InspectorCategory>
-            <InspectorCategory>
-                <InspectorCategoryTitle>
-                    Wymiary
-                </InspectorCategoryTitle>
-                <InspectorCategoryContent>
-                    <div class="grid grid-cols-2 gap-3">
+            <InspectorContent>
+                <InspectorCategory>
+                    <InspectorCategoryContent>
                         <PropertyInput
-                            title="prop_x"
-                            type="number"
-                            value={[props.item.x, (value) => context.modifyItem(props.item.id, { x: value }) ]}
+                            title="prop_name"
+                            type="string"
+                            placeholder="Np. Wentlacja, Mikrofon..."
+                            value={[
+                                props.item.props.label,
+                                value => context.modifyItem(props.item.id, { props: { label: value }})
+                            ]}
                         />
                         <PropertyInput
-                            title="prop_y"
-                            type="number"
-                            value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
+                            title="Ikona"
+                            type="icon"
+                            value={[
+                                props.item.props.icon,
+                                value => context.modifyItem(props.item.id, { props: { icon: value }})
+                            ]}
                         />
-                    </div>
+                    </InspectorCategoryContent>
+                </InspectorCategory>
+                <InspectorCategory>
+                    <InspectorCategoryTitle>
+                        Wymiary
+                    </InspectorCategoryTitle>
+                    <InspectorCategoryContent>
+                        <div class="grid grid-cols-2 gap-3">
+                            <PropertyInput
+                                title="prop_x"
+                                type="number"
+                                value={[props.item.x, (value) => context.modifyItem(props.item.id, { x: value }) ]}
+                            />
+                            <PropertyInput
+                                title="prop_y"
+                                type="number"
+                                value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
+                            />
+                        </div>
 
-                    <PropertyInput 
-                            title="prop_width"
+                        <PropertyInput 
+                                title="prop_width"
+                                type="number"
+                                min={64}
+                                value={[props.item.w, (value) => context.modifyItem(props.item.id, { w: value }) ]}
+                            />
+                        
+                        <PropertyInput 
+                            title="prop_angle"
                             type="number"
-                            min={64}
-                            value={[props.item.w, (value) => context.modifyItem(props.item.id, { w: value }) ]}
+                            is_int={true}
+                            value={[props.item.angle, (value) => context.modifyItem(props.item.id, { angle: value }) ]}
                         />
-                    
-                    <PropertyInput 
-                        title="prop_angle"
-                        type="number"
-                        is_int={true}
-                        value={[props.item.angle, (value) => context.modifyItem(props.item.id, { angle: value }) ]}
-                    />
-                    
-                </InspectorCategoryContent>
-            </InspectorCategory>
-            <div class="grow flex flex-col gap-2 justify-end">
+                        
+                    </InspectorCategoryContent>
+                </InspectorCategory>
+            </InspectorContent>
+            <div class="flex flex-col gap-2 justify-end pt-4 border-t border-border border-dashed">
                 <button 
                     class="bg-primary-soft py-2 rounded-sm text-sm text-foreground border border-border flex items-center justify-center gap-2 cursor-pointer"
                     on:click={() => onDuplicateItem()}

@@ -53,23 +53,22 @@ export default function GuestListPanel(
                         </For>
                     </Match>
                 </Switch>
-
-                <div class="grow flex flex-col gap-2 justify-end">
-                    <Button 
-                        on:click={() => setView(view() === "list" ? "group" : "list")}
-                    >
-                        <UsersRoundIcon stroke-width={1.5} height={18} width={18} />
-                        <p>Pokaż {view() === "list" ? "grupy" : "gości"}</p>
-                    </Button>
-                    <Button 
-                        class="text-error!"
-                        on:click={() => onReleaseAllSeats()}
-                    >
-                        <UnlinkIcon stroke-width={1.5} height={18} width={18} />
-                        <p>Zwolnij wszystkie miejsca</p>
-                    </Button>
-                </div>
             </InspectorContent>
+            <div class="grow flex flex-col p-4 gap-2 justify-end">
+                <Button 
+                    on:click={() => setView(view() === "list" ? "group" : "list")}
+                >
+                    <UsersRoundIcon stroke-width={1.5} height={18} width={18} />
+                    <p>Pokaż {view() === "list" ? "grupy" : "gości"}</p>
+                </Button>
+                <Button 
+                    class="text-error!"
+                    on:click={() => onReleaseAllSeats()}
+                >
+                    <UnlinkIcon stroke-width={1.5} height={18} width={18} />
+                    <p>Zwolnij wszystkie miejsca</p>
+                </Button>
+            </div>
         </Inspector>
     )
 }
@@ -155,7 +154,7 @@ export function GuestElement(
                 <NotepadTextIcon width={16} height="auto" color="var(--color-foreground-muted)" />
                 <textarea 
                     class="text-foreground-muted text-xs italic text-left grow resize-none no-scrollbar"
-                    value={props.guest.note} 
+                    value={props.guest.note || ""} 
                     placeholder="Brak uwag"
                     spellcheck="false"
                     wrap="off"

@@ -12,7 +12,7 @@ import { createItemController } from './controllers/svg/controllers/item-control
 import { createSeatController } from './controllers/svg/controllers/seat-controller';
 import { GuestIcon } from './controllers/svg/GuestIcon';
 
-let DEV = false;
+let DEV = true;
 
 export function App() {
 	const searchParams = new URLSearchParams(window.location.search);
@@ -35,7 +35,7 @@ export function App() {
 		createGuestPolling(ballroomId, canvas);
 	} else {
 		// initialize some guests for dev
-		canvas.setGuests([
+		const guests = [
 			{
 				id: "guest-1",
 				name: "Jan",
@@ -44,7 +44,7 @@ export function App() {
 				group: "Goście Pana Młodego",
 				age_group: "adult",
 				menu: "Vegetarian",
-				note: "Just a chill guy."
+				note: undefined
 			},
 			{
 				id: "guest-2",
@@ -55,8 +55,36 @@ export function App() {
 				age_group: "adult",
 				menu: "Vegan",
 				note: "Loves dancing."
+			},
+			{
+				id: "guest-3",
+				name: "Basia",
+				surname: "Wiśniewska",
+				gender: "woman",
+				group: "Dzieci",
+				age_group: "youth",
+				menu: "Normal",
+				note: "Not alergic to anything."
 			}
-		]);
+		];
+
+		let id = guests.length + 1;
+		for(let i = 0; i < 40; ++i) {
+			guests.push({
+				id: `guest-${id}`,
+				name: `Guest${id}`,
+				surname: `Surname${id}`,
+				gender: i % 2 == 0 ? "man" : "woman",
+				group: i % 2 == 0 ? "Group A" : "Group B",
+				age_group: "adult",
+				menu: i % 2 == 0 ? "Normal" : "Vegetarian",
+				note: undefined
+			});
+
+			++id;
+		}
+
+		canvas.setGuests(guests);
 	}
 
 	onMount(() => {
