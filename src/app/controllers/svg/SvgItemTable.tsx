@@ -227,19 +227,41 @@ export function SvgItemTable(
             return;
         }
 
-        batch(() => {
-            canvas.unseatTable(props.item.id);
+        let guests = canvas.guests.filter(o => o.group === group);
+        if(guests.length === 0) {
+            return;
+        }
 
-            const guests = canvas.guests.filter(o => o.group === group);
-            for(let i = 0; i < guests.length; ++i) {
-                canvas.seatGuest(guests[i].id, props.item.id, i);
+        batch(() => {
+            const occupied = canvas.getTableSeats(props.item.id);
+            guests = guests.filter(guest => {
+                return !occupied.some(o => o.guest_id === guest.id);
+            });
+            
+            if(guests.length === 0) {
+                return;
+            }
+
+            if(occupied.length + guests.length > props.item.props.seats) {
+                alert(`Nie można usadzić wszystkich gości przy tym stole! Potrzebnych miejsc: ${occupied.length + guests.length}, dostępnych miejsc: ${props.item.props.seats}`);
+                return;
+            }
+
+            let seatIndex = 0;
+            
+            while(guests.length > 0) {
+                const isOccupied = occupied.some(o => o.seat_index === seatIndex);
+                if(!isOccupied) {
+                    const guest = guests.shift();
+                    if(guest) {
+                        canvas.seatGuest(guest.id, props.item.id, seatIndex);
+                    }
+                }
+
+                seatIndex++;
             }
         });
     }
-
-    createEffect(() => {
-        console.log(props.item.props.name_italic)
-    })
 
     return (
         <>

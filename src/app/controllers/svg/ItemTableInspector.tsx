@@ -6,6 +6,7 @@ import { Bold, CopyIcon, EyeIcon, EyeOffIcon, Italic, Trash2Icon, UnlinkIcon } f
 import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, InspectorContent } from "./InspectorPresets";
 import PropertyInput from "./PropertyInput";
 import { Button } from "./UI";
+import PropertyDropdown from "./PropertyDropdown";
 
 interface ItemTableInspectorProps {
     item: SvgItem<SvgItemTableProps>;
@@ -42,6 +43,12 @@ export default function ItemTableInspector(
             props: {
                 show_unseated: !props.item.props.show_unseated
             }
+        })
+    }
+
+    function onPositionLockToggle() {
+        context.modifyItem(props.item.id, {
+            position_locked: !props.item.position_locked
         })
     }
 
@@ -106,27 +113,36 @@ export default function ItemTableInspector(
                         Wymiary
                     </InspectorCategoryTitle>
                     <InspectorCategoryContent>
-                        <div class="grid grid-cols-2 gap-3">
-                            <PropertyInput
-                                title="prop_x"
-                                type="number"
-                                value={[props.item.x, (value) => context.modifyItem(props.item.id, { x: value }) ]}
-                            />
-                            <PropertyInput
-                                title="prop_y"
-                                type="number"
-                                value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
-                            />
-                        </div>
-                        
                         <Switch>
                             <Match when={props.item.kind === SvgItemType.TABLE_CIRCLE}>
+                                <div class="flex flex-col gap-1">
+                                    <label class="text-xs pl-1 italic text-foreground-muted">
+                                        Standardowy rozmiar stołu
+                                    </label>
+                                    <PropertyDropdown
+                                        value={(props.item.w).toString()}
+                                        updateValue={value => context.modifyItem(props.item.id, { w: parseInt(value) })}
+                                        invalidOptionFallback="Niestandardowy"
+                                        options={[
+                                            { key: "90", label: "90 cm (2 osoby)" },
+                                            { key: "100", label: "100 cm (3-4 osoby)" },
+                                            { key: "120", label: "120 cm (4-6 osób)" },
+                                            { key: "140", label: "140 cm (6-8 osób)" },
+                                            { key: "150", label: "150 cm (7-9 osób)" },
+                                            { key: "160", label: "160 cm (8-10 osób)" },
+                                            { key: "180", label: "180 cm (10-12 osób)" },
+                                            { key: "200", label: "200 cm (12-14 osób)" },
+                                            { key: "220", label: "220 cm (13-14 osób)" },
+                                            { key: "240", label: "240 cm (14-16 osób)" }
+                                        ]}
+                                    />
+                                </div>
                                 <PropertyInput
-                                    title="prop_radius"
+                                    title="Średnica"
                                     type="number"
                                     min={1}
                                     // @ts-ignore
-                                    value={[props.item.w / 2, (value) => context.modifyItem(props.item.id, { w: value * 2 })]}
+                                    value={[props.item.w, (value) => context.modifyItem(props.item.id, { w: value })]}
                                 />
                             </Match>
                             <Match when={true}>
@@ -258,7 +274,7 @@ export default function ItemTableInspector(
 
                     <div class="flex flex-col gap-1">
                         <label class="text-xs pl-1 italic text-foreground-muted">
-                            Orientacja krzeseł
+                            Widok podpisu miejsca
                         </label>
                         <div class="flex gap-2">
                             <Button 
@@ -345,6 +361,21 @@ export default function ItemTableInspector(
                 >
                     <UnlinkIcon stroke-width={1.5} height={20} width="auto" />
                     <p>Zwolnij wszystkie krzesła</p>
+                </button>
+                <button 
+                    class="col-span-2 bg-primary-soft py-2 rounded-sm text-sm text-foreground border border-border flex items-center justify-center gap-2 cursor-pointer"
+                    on:click={() => onPositionLockToggle()}
+                >
+                    <Switch>
+                        <Match when={props.item.position_locked}>
+                            <EyeOffIcon stroke-width={1.5} height={20} width="auto" />
+                            <p>Oblokuj stolik</p>
+                        </Match>
+                        <Match when={!props.item.position_locked}>
+                            <EyeIcon stroke-width={1.5} height={20} width="auto" />
+                            <p>Zablokuj stolik</p>
+                        </Match>
+                    </Switch>
                 </button>
                 <button 
                     class="bg-primary-soft py-2 rounded-sm text-sm text-foreground border border-border flex items-center justify-center gap-2 cursor-pointer"

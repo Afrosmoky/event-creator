@@ -13,7 +13,7 @@ export function GuestIcon(
             <Match when={age_group() === "baby"}>
                 <SvgIcon icon={`group_baby_${gender()}`} x={0} y={0} width={props.radius * 2} height={props.radius * 2} />
             </Match>
-            <Match when={age_group() === "child"}>
+            <Match when={age_group() === "kid"}>
                 <SvgIcon icon={`group_child_${gender()}`} x={0} y={0} width={props.radius * 2} height={props.radius * 2} />
             </Match>
             <Match when={age_group() === "youth"}>

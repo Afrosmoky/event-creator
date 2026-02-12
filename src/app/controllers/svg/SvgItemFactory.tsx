@@ -20,19 +20,27 @@ export function SvgItemFactory(
     let [lastMouseY, setLastMouseY] = createSignal(0);
 
     function onContainerPointerDown(e: PointerEvent) {
-        const target = e.target as SVGGElement;
-
         e.stopPropagation();
         e.preventDefault();
+
+        context.setFocusedItemIndex(props.item.id);
+        if(props.item.position_locked) {
+            console.warn(`Item is position locked!`);
+            return;
+        }
+
+        const target = e.target as SVGGElement;
         target.setPointerCapture(e.pointerId);
 
         setLastMouseX(e.clientX);
         setLastMouseY(e.clientY);
-
-        context.setFocusedItemIndex(props.item.id);
     }
 
     function onContainerPointerMove(e: PointerEvent) {
+        if(props.item.position_locked) {
+            return;
+        }
+
         const target = e.target as SVGGElement;
         if (!target.hasPointerCapture(e.pointerId)) return;
 

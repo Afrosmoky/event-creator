@@ -40,6 +40,13 @@ const config: SideMenuConfig = {
                 {
                     blueprint: SvgItems.TABLE_CIRCLE,
                     icon: "round-table"
+                },
+                {
+                    blueprint: SvgItems.ICON,
+                    icon: "high-chair-sign",
+                    overwrite: {
+                        icon: "high-chair-sign"
+                    }
                 }
             ]
         },

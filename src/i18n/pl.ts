@@ -25,7 +25,7 @@ export const dict = {
     prop_y: "Y",
     prop_width: "Szerokość",
     prop_height: "Długość",
-    prop_radius: "Promień",
+    prop_radius: "Średnica",
     prop_angle: "Kąt",
 
     prop_name: "Nazwa",

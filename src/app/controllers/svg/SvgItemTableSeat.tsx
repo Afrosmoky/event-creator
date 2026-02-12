@@ -1,6 +1,6 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps, SvgItemType } from "./SvgItem";
-import { createEffect, createMemo, createSignal, Match, Show, Switch, untrack } from "solid-js";
+import { batch, createEffect, createMemo, createSignal, Match, Show, Switch, untrack } from "solid-js";
 import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 
 interface SvgItemTableSeatComponentProps {
@@ -36,11 +36,50 @@ export function SvgItemTableSeat(
 
     function onPointerUp(event: PointerEvent) {
         const guest = context.guests.find(o => o.id === context.draggingGuest());
-        if(!guest) {
+        if(guest) {
+            context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
             return;
         }
 
-        context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
+        const group = context.draggingGroup();
+        if(!group) {
+            return;
+        }
+
+        let guests = context.guests.filter(o => o.group === group);
+        if(guests.length === 0) {
+            return;
+        }
+
+        batch(() => {
+            const occupied = context.getTableSeats(props.item.parent.id);
+            guests = guests.filter(guest => {
+                return !occupied.some(o => o.guest_id === guest.id);
+            });
+            
+            if(guests.length === 0) {
+                return;
+            }
+
+            if(occupied.length + guests.length > props.item.parent.props.seats) {
+                alert(`Nie można usadzić wszystkich gości przy tym stole! Potrzebnych miejsc: ${occupied.length + guests.length}, dostępnych miejsc: ${props.item.parent.props.seats}`);
+                return;
+            }
+
+            let seatIndex = 0;
+            
+            while(guests.length > 0) {
+                const isOccupied = occupied.some(o => o.seat_index === seatIndex);
+                if(!isOccupied) {
+                    const guest = guests.shift();
+                    if(guest) {
+                        context.seatGuest(guest.id, props.item.parent.id, seatIndex);
+                    }
+                }
+
+                seatIndex++;
+            }
+        });
     }
 
     const ArcText = (props: { 
