@@ -573,6 +573,10 @@ export const makeSvgDrawerContext = () => {
         });
     }
 
+    function getTableSeats(table_id: number) {
+        return seats.filter(o => o.table_id === table_id);
+    }
+
     function unseatGuest(guest_id: string) {
         const seat = seats.find(o => o.guest_id == guest_id);
         if(seat) {
@@ -617,6 +621,7 @@ export const makeSvgDrawerContext = () => {
         guests, setGuests,
         seats, seatsMap, changeSeatId,
         addSeat, modifySeat, removeSeat, unseatTable,
+        getTableSeats,
         draggingGuest, setDraggingGuest,
         draggingGroup, setDraggingGroup,
         seatGuest, unseatGuest, isGuestSeated, unseatAllGuests,

@@ -12,7 +12,7 @@ import { createItemController } from './controllers/svg/controllers/item-control
 import { createSeatController } from './controllers/svg/controllers/seat-controller';
 import { GuestIcon } from './controllers/svg/GuestIcon';
 
-let DEV = true;
+let DEV = false;
 
 export function App() {
 	const searchParams = new URLSearchParams(window.location.search);

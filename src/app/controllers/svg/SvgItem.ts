@@ -157,6 +157,7 @@ export interface SvgItem<Props = Record<string, any>> {
     kind: string;
 
     parent?: SvgItem;
+    position_locked?: boolean;
 
     x: number;
     y: number;
