@@ -76,7 +76,7 @@ export function App() {
 				surname: `Surname${id}`,
 				gender: i % 2 == 0 ? "man" : "woman",
 				group: i % 2 == 0 ? "Group A" : "Group B",
-				age_group: "adult",
+				age_group: "youth",
 				menu: i % 2 == 0 ? "Normal" : "Vegetarian",
 				note: undefined
 			});
