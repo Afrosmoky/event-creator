@@ -121,7 +121,29 @@ export default function ItemTableInspector(
                                     </label>
                                     <PropertyDropdown
                                         value={(props.item.w).toString()}
-                                        updateValue={value => context.modifyItem(props.item.id, { w: parseInt(value) })}
+                                        updateValue={value => {
+                                            const numericValue = parseInt(value);
+                                            if(isNaN(numericValue)) {
+                                                return;
+                                            }
+
+                                            let spacing = 0;
+                                            switch(numericValue) {
+                                                case 90: spacing = 180; break;
+                                                case 100: spacing = 130; break;
+                                                case 120: spacing = 120; break;
+                                                case 140: spacing = 100; break;
+                                                case 150: spacing = 85; break;
+                                                case 160: spacing = 80; break;
+                                                case 180: spacing = 70; break;
+                                                case 200: spacing = 65; break;
+                                                case 220: spacing = 62; break;
+                                                case 240: spacing = 65; break;
+                                                default: spacing = 45; break;
+                                            }
+
+                                            context.modifyItem(props.item.id, { w: numericValue, props: { seat_spacing: spacing } });
+                                        }}
                                         invalidOptionFallback="Niestandardowy"
                                         options={[
                                             { key: "90", label: "90 cm (2 osoby)" },

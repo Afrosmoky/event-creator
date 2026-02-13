@@ -105,7 +105,7 @@ export function SvgItemTableCircle(
     function clampSeats(value: number) {
         const length = calculateLength();
         const maxSeats = Math.floor(length / MIN_SEAT_SPACING);
-        const minSeats = Math.ceil(length / MAX_SEAT_SPACING);
+        const minSeats = Math.floor(length / MAX_SEAT_SPACING);
 
         return clamp(value, minSeats, maxSeats);
     }
