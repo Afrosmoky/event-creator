@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { SvgItemFactory } from './SvgItemFactory';
 import { createStore } from 'solid-js/store';
 import { useSvgDrawerContext } from '@/app/context/SvgDrawerContext';
@@ -12,8 +12,8 @@ export function SvgDrawer(
     
     let svgDOM: SVGSVGElement = null!;
 
-    let [cellX, setCellX] = createSignal(32);
-    let [cellY, setCellY] = createSignal(32);
+    let [cellX, setCellX] = createSignal(100);
+    let [cellY, setCellY] = createSignal(100);
 
     onMount(() => {
         context.setRootDOM(svgDOM);
@@ -21,12 +21,16 @@ export function SvgDrawer(
         context.setClientWidth(svgDOM.clientWidth);
         context.setClientHeight(svgDOM.clientHeight);
 
+        context.zoomToFit();
+
         createResizeObserver(svgDOM, ({ width, height }, el) => {
             if(el === svgDOM) {
                 console.log(`SVG DOM resized to ${width}x${height}`);
 
                 context.setClientWidth(width);
                 context.setClientHeight(height);
+
+                context.zoomToFit();
             }
         });
 
@@ -38,10 +42,6 @@ export function SvgDrawer(
             context.setRootDOM(null);
         }
     })
-
-    createEffect(() => {
-        context.setZoom(Math.floor(cellX()) / 32);
-    });
 
     createEffect(() => {
         console.log(`Zoom: ${context.zoom()}`)
@@ -86,9 +86,7 @@ export function SvgDrawer(
         e.preventDefault();
 
         const oldZoom = context.zoom();
-
-        setCellX(Math.max(8, Math.min(256, cellX() - e.deltaY * 0.1)));
-        setCellY(Math.max(8, Math.min(256, cellY() - e.deltaY * 0.1)));
+        context.setZoom(Math.max(0.1, context.zoom() - e.deltaY * 0.001));
 
         const newZoom = context.zoom();
 
@@ -114,9 +112,6 @@ export function SvgDrawer(
 
                 style={{
                     "background-color": "white",
-                    "background-image": `radial-gradient(rgb(200 200 200 / 0.8) ${Math.max(1.2 * context.zoom(), 0.5)}px, transparent 0)`,
-                    "background-size": `${Math.floor(cellX())}px ${Math.floor(cellY())}px`,
-                    "background-position": `${((context.panX() + context.clientWidth() / 2) % Math.floor(cellX()))}px ${((context.panY() + context.clientHeight() / 2) % Math.floor(cellY()))}px`,
                 }}
                 
                 on:wheel={onWheel}
@@ -124,6 +119,7 @@ export function SvgDrawer(
                 on:pointermove={onPointerMove}
                 on:pointerup={onPointerUp}
             >
+                
                 <style innerHTML={`
                     @font-face { 
                         font-family: "Sora";
@@ -139,14 +135,51 @@ export function SvgDrawer(
                         font-optical-sizing: auto;
                     }
                 `} />
+
+                <defs>
+                    <pattern id="grid" width={cellX()} height={cellY()} patternUnits="userSpaceOnUse">
+                        <path d={`M ${cellX()} 0 L 0 0 0 ${cellY()}`} fill="none" stroke="#cccccc" stroke-width="1" />
+                    </pattern>
+
+                    <clipPath id="canvas-clip">
+                        <rect x="0" y="0" width={context.canvasWidth()} height={context.canvasHeight()} />
+                    </clipPath>
+                </defs>
+
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
-                    <For each={context.itemsArray}>
-                        {item => {
-                            return (
-                                <SvgItemFactory item={item} />
-                            );
-                        }}
-                    </For>
+                    <text y="-16">
+                        Sala o wymiarach {context.canvasWidth() / 100}x{context.canvasHeight() / 100} metrów
+                    </text>
+                    <rect 
+                        x="0"
+                        y="0"
+                        rx="8"
+                        ry="8"
+                        width={context.canvasWidth()}
+                        height={context.canvasHeight()}
+                        fill="#FAF9F7"
+                    />
+                    <rect
+                        id="canvas_frame"
+                        x="-2"
+                        y="-2"
+                        rx="8"
+                        ry="8"
+                        width={context.canvasWidth() + 4}
+                        height={context.canvasHeight() + 4}
+                        fill="url(#grid)"
+                        stroke="black"
+                        stroke-width="4"
+                    />
+                    <g clip-path='url(#canvas-clip)'>
+                        <For each={context.itemsArray}>
+                            {item => {
+                                return (
+                                    <SvgItemFactory item={item} />
+                                );
+                            }}
+                        </For>
+                    </g>
                 </g>
                 <SvgLogo />
             </svg>
@@ -155,9 +188,27 @@ export function SvgDrawer(
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
                     <Show when={context.focusedItemIndex() != -1}>
                         <SvgItemFocus item={context.items[context.focusedItemIndex()]!} />
+                        {/*<SvgItemBBox item={context.items[context.focusedItemIndex()]!} />*/}
                     </Show>
                 </g>
             </svg>
         </div>
+    );
+}
+
+function SvgItemBBox(props: { item: any }) {
+    const totalWidth = createMemo(() => props.item.w + (props.item.props?.seat_radius || 0) * 4 + 8 * 2);
+    const totalHeight = createMemo(() => props.item.h + (props.item.props?.seat_radius || 0) * 4 + 8 * 2);
+
+    return (
+        <rect
+            x={props.item.x - totalWidth() / 2}
+            y={props.item.y - totalHeight() / 2}
+            width={totalWidth()}
+            height={totalHeight()}
+            fill="none"
+            stroke="red"
+            stroke-width="1"
+        />
     );
 }

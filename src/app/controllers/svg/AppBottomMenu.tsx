@@ -6,6 +6,7 @@ import { DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, 
 import { createSvgItemFromBlueprint, SvgItems, type SvgItemBlueprint } from "./SvgItem";
 import { SvgIcon } from "./SvgItemIcon";
 import API from "@/app/api/API";
+import PropertyInput from "./PropertyInput";
 
 interface SideMenuItem {
     blueprint: SvgItemBlueprint,
@@ -284,18 +285,53 @@ export function AppBottomMenu(props: {
 		}
 	}
 
+    function cloneRootDOMNicely() {
+        const rootDOM = canvas.rootDOM();
+        if(!rootDOM) {
+            return null;
+        }
+
+        const prevPanX = canvas.panX();
+        const prevPanY = canvas.panY();
+        const prevZoom = canvas.zoom();
+
+        canvas.zoomToFit();
+
+        const clone = rootDOM.cloneNode(true) as SVGSVGElement;
+        const frame = clone.querySelector("#canvas_frame") as SVGRectElement;
+        if(frame) {
+            frame.setAttribute("fill", "none");
+        }
+
+        canvas.setPanX(prevPanX);
+        canvas.setPanY(prevPanY);
+        canvas.setZoom(prevZoom);
+
+        return clone;
+    }
+
 	async function openBlob(type: "svg" | "png") {
 		const rootDOM = canvas.rootDOM();
 		if(!rootDOM) {
 			return;
 		}
 
-		const url = type == "svg" ? 
-            createSvgBlobFromSvg(rootDOM) :
-            await createPngBlobFromSvg(rootDOM);
-		openBlobInWindow(url);
+        const clone = cloneRootDOMNicely();
+        document.body.appendChild(clone);
 
-		setShowExportPicker(false);
+        try {
+            const url = type == "svg" ? 
+                createSvgBlobFromSvg(clone) :
+                await createPngBlobFromSvg(clone);
+
+            openBlobInWindow(url);
+        } catch (error) {
+            console.error("Error exporting image:", error);
+        } finally {
+            document.body.removeChild(clone);
+            setShowExportPicker(false);
+        }
+		
 	}
 
 	async function downloadBlob(type: "svg" | "png") {
@@ -304,12 +340,21 @@ export function AppBottomMenu(props: {
 			return;
 		}
 
-		const url = type == "svg" ?
-            createSvgBlobFromSvg(rootDOM) :
-            await createPngBlobFromSvg(rootDOM);
+        const clone = cloneRootDOMNicely();
+        document.body.appendChild(clone);
 
-		saveBlobToFile(url, type);
-		setShowExportPicker(false);
+        try {
+            const url = type == "svg" ?
+                createSvgBlobFromSvg(clone) :
+                await createPngBlobFromSvg(clone);
+
+            saveBlobToFile(url, type);
+        } catch (error) {
+            console.error("Error exporting image:", error);
+        } finally {
+            setShowExportPicker(false);
+            document.body.removeChild(clone);
+        }
 	}
 
     async function downloadGuestsCsv() {
@@ -329,8 +374,8 @@ export function AppBottomMenu(props: {
             item.props[key] = config.overwrite[key];
         }
 
-        item.x = -canvas.panX();
-		item.y = -canvas.panY();
+        item.x = -canvas.panX() / canvas.zoom();
+		item.y = -canvas.panY() / canvas.zoom();
 
         item = canvas.addItem(undefined, item);
 		canvas.setFocusedItemIndex(item.id);
@@ -339,6 +384,22 @@ export function AppBottomMenu(props: {
     return (
         <div class="flex flex-col justify-end w-48 h-full gap-4 text-foreground bg-card">
             <div class="grow overflow-y-auto overscroll-none p-2 flex flex-col gap-4 no-scrollbar">
+                <h3 class="uppercase text-sm font-semibold text-foreground border-b border-dashed border-border">
+                    Wymiary sali
+                </h3>
+                <PropertyInput
+                    title="Szerokość (m)"
+                    type="number"
+                    min={64}
+                    value={[canvas.canvasWidth() / 100, (value) => canvas.setCanvasWidth(value * 100)]}
+                />
+                <PropertyInput
+                    title="Wysokość (m)"
+                    type="number"
+                    min={64}
+                    value={[canvas.canvasHeight() / 100, (value) => canvas.setCanvasHeight(value * 100)]}
+                />
+                <div class="h-0.5"></div>
                 <For each={config.groups}>
                     {group => (
                         <>

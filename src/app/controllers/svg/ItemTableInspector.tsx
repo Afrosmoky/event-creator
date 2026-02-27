@@ -113,6 +113,20 @@ export default function ItemTableInspector(
                         Wymiary
                     </InspectorCategoryTitle>
                     <InspectorCategoryContent>
+                        {/*<div class="grid grid-cols-2 gap-3">
+                            <PropertyInput 
+                                title="prop_x"
+                                type="number"
+                                min={64}
+                                value={[props.item.x, (value) => context.modifyItem(props.item.id, { x: value }) ]}
+                            />
+                            <PropertyInput 
+                                title="prop_y"
+                                type="number"
+                                min={64}
+                                value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
+                            />
+                        </div>*/}
                         <Switch>
                             <Match when={props.item.kind === SvgItemType.TABLE_CIRCLE}>
                                 <div class="flex flex-col gap-1">

@@ -319,7 +319,7 @@ export const makeSvgDrawerContext = () => {
     const [itemsArray, setItemsArray] = createStore<SvgItem[]>([]);
     const [focusedItemIndex, setFocusedItemIndex] = createSignal<number>(-1);
     const [focusedSeatIndex, setFocusedSeatIndex] = createSignal<number>(-1);
-    const [zoom, setZoom] = createSignal<number>(1);
+    const [zoom, setZoom] = createSignal<number>(0.25);
     const [panX, setPanX] = createSignal(0);
     const [panY, setPanY] = createSignal(0);
     const [rootDOM, setRootDOM] = createSignal<SVGSVGElement | null>(null);
@@ -333,6 +333,8 @@ export const makeSvgDrawerContext = () => {
     const [clientWidth, setClientWidth] = createSignal(0);
     const [clientHeight, setClientHeight] = createSignal(0);
     const [showDietaryIcons, setShowDietaryIcons] = createSignal(true);
+    const [canvasWidth, setCanvasWidth] = createSignal(30 * 100);
+    const [canvasHeight, setCanvasHeight] = createSignal(20 * 100);
 
     const [guestPatches, setGuestPatches] = createStore<GuestPatch[]>([]);
     
@@ -362,6 +364,25 @@ export const makeSvgDrawerContext = () => {
             });
             setGuestPatches(guestPatches.length, patch);
         })
+    }
+
+    function centerPan() {
+        setPanX(-canvasWidth() / 2 * zoom());
+        setPanY(-canvasHeight() / 2 * zoom());
+    }
+
+    function zoomToFit(padding = 150) {
+        const contentWidth = canvasWidth() + padding * 2;
+        const contentHeight = canvasHeight() + padding * 2;
+
+        const zoomX = clientWidth() / contentWidth;
+        const zoomY = clientHeight() / contentHeight;
+
+        const newZoom = Math.min(zoomX, zoomY);
+        setZoom(newZoom);
+
+        setPanX(-canvasWidth() / 2 * newZoom);
+        setPanY(-canvasHeight() / 2 * newZoom);
     }
 
     function addItem(id: number, item: SvgItem, emitPatch = true) {
@@ -609,6 +630,8 @@ export const makeSvgDrawerContext = () => {
         items,
         itemsArray,
         removed_ids,
+        centerPan,
+        zoomToFit,
         //setItems,
         focusedItemIndex,
         setFocusedItemIndex,
@@ -626,6 +649,9 @@ export const makeSvgDrawerContext = () => {
         draggingGroup, setDraggingGroup,
         seatGuest, unseatGuest, isGuestSeated, unseatAllGuests,
         showDietaryIcons, setShowDietaryIcons,
+
+        canvasWidth, setCanvasWidth,
+        canvasHeight, setCanvasHeight,
 
         patches, seatPatches,
         clearPatches,
