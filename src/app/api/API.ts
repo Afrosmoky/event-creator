@@ -97,6 +97,26 @@ namespace API {
         }
     }
 
+    export interface Config {
+        canvas_width: number;
+        canvas_height: number;
+    }
+
+    export function get_config(ballroom_id: string) {
+        return request_no_data<Config>(
+            BASE_URL + `/ballrooms/${ballroom_id}/config`,
+            "GET"
+        );
+    }
+
+    export function update_config(ballroom_id: string, config: Partial<Config>) {
+        return request<unknown>(
+            BASE_URL + `/ballrooms/${ballroom_id}/config`,
+            "PUT",
+            config
+        );
+    }
+
     export function add_element(element: Omit<DeepPartial<Element>, "id" | "created_at" | "updated_at">) {
         return request<Element>(
             BASE_URL + '/element',
@@ -225,6 +245,51 @@ namespace API {
         }
 
         return json.data;
+    }
+
+    /**
+     * @throws {RequestError}
+     */
+    async function request_no_data<T>(
+        path: string, 
+        method: "GET" | "POST" | "PUT" | "DELETE", 
+        body?: any, 
+        headers?: Record<string, string>
+    ) {
+        let res: Response;
+
+        try {
+            res = await fetch(path, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(headers ?? {})
+                },
+                body: body ? JSON.stringify(body) : undefined
+            });
+        } catch(error) {
+            console.error(error);
+            throw new RequestError("NETWORK", "Network request failed");
+        }
+
+        if(!res.ok) {
+            throw new RequestError("HTTP", res.statusText, res.status);
+        }
+
+        // no body
+        if (res.status === 204 || res.headers.get("Content-Length") === "0") {
+            return undefined;
+        }
+
+        let json: T;
+        try {
+            json = await res.json();
+        } catch(error) {
+            console.error(error);
+            throw new RequestError("INVALID_JSON", "Failed to parse JSON body");
+        }
+
+        return json;
     }
 };
 

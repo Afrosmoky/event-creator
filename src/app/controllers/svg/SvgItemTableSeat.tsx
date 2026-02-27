@@ -327,8 +327,8 @@ export function SvgItemTableSeat(
                     cx={props.item.props.radius}
                     cy={props.item.props.radius}
                     r={props.item.props.radius}
-                    fill="#FAF1EF"
-                    fill-opacity="0.2"
+                    fill="#FFFFFF"
+                    fill-opacity="1"
                     stroke="black"
                     stroke-width={isHover() && context.draggingGuest() != "" ? 0 : 1}
                     

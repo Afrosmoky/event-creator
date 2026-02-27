@@ -96,7 +96,7 @@ export default function ItemTableInspector(
                         />
 
                         <PropertyInput
-                            title="Rozstaw miejsc"
+                            title="Szerokość miejsca przy stole"
                             type="number"
                             theme="slider"
                             min={MIN_SEAT_SPACING}
@@ -106,6 +106,10 @@ export default function ItemTableInspector(
                                 value => onSpacingUpdate(value)
                             ]}
                         />
+
+                        <label class="text-xs pl-1 italic text-foreground-muted">
+                            Rekomendowana min. szerokość miejsca dla jednej osoby dorosłej wynosi 65 cm.
+                        </label>
                     </InspectorCategoryContent>
                 </InspectorCategory>
                 <InspectorCategory>
@@ -113,6 +117,20 @@ export default function ItemTableInspector(
                         Wymiary
                     </InspectorCategoryTitle>
                     <InspectorCategoryContent>
+                        {/*<div class="grid grid-cols-2 gap-3">
+                            <PropertyInput 
+                                title="prop_x"
+                                type="number"
+                                min={64}
+                                value={[props.item.x, (value) => context.modifyItem(props.item.id, { x: value }) ]}
+                            />
+                            <PropertyInput 
+                                title="prop_y"
+                                type="number"
+                                min={64}
+                                value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
+                            />
+                        </div>*/}
                         <Switch>
                             <Match when={props.item.kind === SvgItemType.TABLE_CIRCLE}>
                                 <div class="flex flex-col gap-1">
@@ -391,7 +409,7 @@ export default function ItemTableInspector(
                     <Switch>
                         <Match when={props.item.position_locked}>
                             <EyeOffIcon stroke-width={1.5} height={20} width="auto" />
-                            <p>Oblokuj stolik</p>
+                            <p>Odblokuj stolik</p>
                         </Match>
                         <Match when={!props.item.position_locked}>
                             <EyeIcon stroke-width={1.5} height={20} width="auto" />

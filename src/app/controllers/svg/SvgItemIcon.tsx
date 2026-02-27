@@ -71,10 +71,6 @@ export function SvgItemIcon(
     const context = useSvgDrawerContext();
 
     createEffect(() => {
-        console.log(`Current icon: ${props.item.props.icon}`);
-    })
-
-    createEffect(() => {
         props.item.w;
 
         untrack(() => {

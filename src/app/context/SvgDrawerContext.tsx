@@ -50,6 +50,7 @@ export type GenericPatch<T = any, IdType = number> =
 export type Patch = GenericPatch<SvgItem>;
 export type SeatPatch = GenericPatch<SeatClient>;
 export type GuestPatch = GenericPatch<Guest, string>;
+export type ConfigPatch = GenericPatch<{ width: number; height: number }>;
 
 export type PatchSender<T extends GenericPatch> = (patches: T[]) => Promise<void>;
 
@@ -85,8 +86,14 @@ export function createPolling<T>(callback: () => Promise<T>, interval: number, h
             return;
         }
 
-        await refetch();
-        timeout = setTimeout(poll, interval);
+        try {
+            await refetch();
+        } catch(error) {
+            console.error("Polling error:");
+            console.error(error);
+        } finally {
+            timeout = setTimeout(poll, interval);
+        }
     }
 
     onCleanup(() => {
@@ -115,8 +122,10 @@ export function createPatchSync<T extends GenericPatch<any, any>>(
 
         try {
             while(queue.length > 0) {
-                const batch = queue.splice(0);
+                const batch = queue.slice(0);
                 await sender(batch);
+
+                queue.splice(0, batch.length);
             }
         } finally {
             flushing = false;
@@ -319,7 +328,7 @@ export const makeSvgDrawerContext = () => {
     const [itemsArray, setItemsArray] = createStore<SvgItem[]>([]);
     const [focusedItemIndex, setFocusedItemIndex] = createSignal<number>(-1);
     const [focusedSeatIndex, setFocusedSeatIndex] = createSignal<number>(-1);
-    const [zoom, setZoom] = createSignal<number>(1);
+    const [zoom, setZoom] = createSignal<number>(0.25);
     const [panX, setPanX] = createSignal(0);
     const [panY, setPanY] = createSignal(0);
     const [rootDOM, setRootDOM] = createSignal<SVGSVGElement | null>(null);
@@ -333,8 +342,11 @@ export const makeSvgDrawerContext = () => {
     const [clientWidth, setClientWidth] = createSignal(0);
     const [clientHeight, setClientHeight] = createSignal(0);
     const [showDietaryIcons, setShowDietaryIcons] = createSignal(true);
+    const [canvasWidth, setCanvasWidth] = createSignal(30 * 100);
+    const [canvasHeight, setCanvasHeight] = createSignal(20 * 100);
 
     const [guestPatches, setGuestPatches] = createStore<GuestPatch[]>([]);
+    const [configPatches, setConfigPatches] = createStore<ConfigPatch[]>([]);
     
     const removed_ids: Map<number, boolean> = new Map();
 
@@ -342,6 +354,27 @@ export const makeSvgDrawerContext = () => {
         setPatches(prev => []);
         setSeatPatches(prev => []);
         setGuestPatches(prev => []);
+        setConfigPatches(prev => []);
+    }
+
+    function modifyCanvasSize(width: number, height: number, emitPatch: boolean = true) {
+        batch(() => {
+            setCanvasWidth(width);
+            setCanvasHeight(height);
+
+            if(emitPatch) {
+                const patch: ConfigPatch = {
+                    type: "mod",
+                    id: 0,
+                    value: {
+                        width: width,
+                        height: height
+                    }
+                };
+
+                setConfigPatches(configPatches.length, patch);
+            }
+        });
     }
 
     function modifyGuestNote(id: string, note: string) {
@@ -362,6 +395,25 @@ export const makeSvgDrawerContext = () => {
             });
             setGuestPatches(guestPatches.length, patch);
         })
+    }
+
+    function centerPan() {
+        setPanX(-canvasWidth() / 2 * zoom());
+        setPanY(-canvasHeight() / 2 * zoom());
+    }
+
+    function zoomToFit(padding = 150) {
+        const contentWidth = canvasWidth() + padding * 2;
+        const contentHeight = canvasHeight() + padding * 2;
+
+        const zoomX = clientWidth() / contentWidth;
+        const zoomY = clientHeight() / contentHeight;
+
+        const newZoom = Math.min(zoomX, zoomY);
+        setZoom(newZoom);
+
+        setPanX(-canvasWidth() / 2 * newZoom);
+        setPanY(-canvasHeight() / 2 * newZoom);
     }
 
     function addItem(id: number, item: SvgItem, emitPatch = true) {
@@ -609,6 +661,8 @@ export const makeSvgDrawerContext = () => {
         items,
         itemsArray,
         removed_ids,
+        centerPan,
+        zoomToFit,
         //setItems,
         focusedItemIndex,
         setFocusedItemIndex,
@@ -626,6 +680,11 @@ export const makeSvgDrawerContext = () => {
         draggingGroup, setDraggingGroup,
         seatGuest, unseatGuest, isGuestSeated, unseatAllGuests,
         showDietaryIcons, setShowDietaryIcons,
+
+        canvasWidth,
+        canvasHeight,
+        modifyCanvasSize,
+        configPatches,
 
         patches, seatPatches,
         clearPatches,

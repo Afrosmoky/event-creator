@@ -29,10 +29,6 @@ export function SvgItemText(
     const anchor: "start" | "middle" | "end" = "middle";
 
     createEffect(() => {
-        console.log(`Current icon: ${props.item.props.name}`);
-    });
-
-    createEffect(() => {
         props.item.props.name_font_size;
         props.item.props.name;
         props.item.props.name_bold;
