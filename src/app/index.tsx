@@ -11,6 +11,7 @@ import { createGuestPolling } from './controllers/svg/polling/guest-polling';
 import { createItemController } from './controllers/svg/controllers/item-controller';
 import { createSeatController } from './controllers/svg/controllers/seat-controller';
 import { GuestIcon } from './controllers/svg/GuestIcon';
+import { createConfigController } from './controllers/svg/controllers/config-controller';
 
 let DEV = false;
 
@@ -30,6 +31,7 @@ export function App() {
 	if(!DEV) {
 		createItemController(ballroomId, canvas);
 		createSeatController(ballroomId, canvas);
+		createConfigController(ballroomId, canvas);
 
 		createGuestSync(canvas);
 		createGuestPolling(ballroomId, canvas);

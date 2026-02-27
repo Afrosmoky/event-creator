@@ -133,8 +133,6 @@ export function SvgItemTableCircle(
             const x = Math.cos(rad) * r;
             const y = Math.sin(rad) * r;
 
-            console.log(`Seat ${i}: angle=${angle} x=${x} y=${y}`);
-
             const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT);
             seat.parent = props.item;
             seat.x = x;
@@ -142,7 +140,6 @@ export function SvgItemTableCircle(
             seat.w = SEAT_RADIUS * 2;
             seat.h = SEAT_RADIUS * 2;
             seat.props.table_angle = (-angle + 90 + 360) % 360;
-            console.log(`Seat ${i}: table_angle=${seat.props.table_angle}`);
             seat.props.radius = props.item.props.seat_radius;
             seat.props.index = seats.length;
 

@@ -10,12 +10,12 @@ document.getElementById('spa-loader')!.outerHTML = '';
 render(
   () => (
     <main class='relative w-screen h-screen overflow-hidden'>
-			<I18nContextProvider>
-				<SvgDrawerContextProvider>
-					<App />
-				</SvgDrawerContextProvider>
-			</I18nContextProvider>
-		</main>
+		<I18nContextProvider>
+			<SvgDrawerContextProvider>
+				<App />
+			</SvgDrawerContextProvider>
+		</I18nContextProvider>
+	</main>
   ),
   document.body
 );

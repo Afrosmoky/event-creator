@@ -185,8 +185,6 @@ export function SvgItemTable(
 
             const table_angle = (Math.atan2(perpY, perpX) * 180 / Math.PI + 360) % 360;
 
-            console.log(`Side ${i}: count=${count}, length=${length}, stepX=${stepX}, stepY=${stepY}, perpX=${perpX}, perpY=${perpY}, table_angle=${table_angle}` );
-
             for (let j = 0; j < count; j++) {
                 const seatX = p0.x + params.seat_start_padding * nx + perpX * (item.props.seat_radius + 4) + stepX * (j + 0.5);
                 const seatY = p0.y + params.seat_start_padding * ny - perpY * (item.props.seat_radius + 4) + stepY * (j + 0.5);

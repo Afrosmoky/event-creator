@@ -50,6 +50,7 @@ export type GenericPatch<T = any, IdType = number> =
 export type Patch = GenericPatch<SvgItem>;
 export type SeatPatch = GenericPatch<SeatClient>;
 export type GuestPatch = GenericPatch<Guest, string>;
+export type ConfigPatch = GenericPatch<{ width: number; height: number }>;
 
 export type PatchSender<T extends GenericPatch> = (patches: T[]) => Promise<void>;
 
@@ -85,8 +86,14 @@ export function createPolling<T>(callback: () => Promise<T>, interval: number, h
             return;
         }
 
-        await refetch();
-        timeout = setTimeout(poll, interval);
+        try {
+            await refetch();
+        } catch(error) {
+            console.error("Polling error:");
+            console.error(error);
+        } finally {
+            timeout = setTimeout(poll, interval);
+        }
     }
 
     onCleanup(() => {
@@ -115,8 +122,10 @@ export function createPatchSync<T extends GenericPatch<any, any>>(
 
         try {
             while(queue.length > 0) {
-                const batch = queue.splice(0);
+                const batch = queue.slice(0);
                 await sender(batch);
+
+                queue.splice(0, batch.length);
             }
         } finally {
             flushing = false;
@@ -337,6 +346,7 @@ export const makeSvgDrawerContext = () => {
     const [canvasHeight, setCanvasHeight] = createSignal(20 * 100);
 
     const [guestPatches, setGuestPatches] = createStore<GuestPatch[]>([]);
+    const [configPatches, setConfigPatches] = createStore<ConfigPatch[]>([]);
     
     const removed_ids: Map<number, boolean> = new Map();
 
@@ -344,6 +354,27 @@ export const makeSvgDrawerContext = () => {
         setPatches(prev => []);
         setSeatPatches(prev => []);
         setGuestPatches(prev => []);
+        setConfigPatches(prev => []);
+    }
+
+    function modifyCanvasSize(width: number, height: number, emitPatch: boolean = true) {
+        batch(() => {
+            setCanvasWidth(width);
+            setCanvasHeight(height);
+
+            if(emitPatch) {
+                const patch: ConfigPatch = {
+                    type: "mod",
+                    id: 0,
+                    value: {
+                        width: width,
+                        height: height
+                    }
+                };
+
+                setConfigPatches(configPatches.length, patch);
+            }
+        });
     }
 
     function modifyGuestNote(id: string, note: string) {
@@ -650,8 +681,10 @@ export const makeSvgDrawerContext = () => {
         seatGuest, unseatGuest, isGuestSeated, unseatAllGuests,
         showDietaryIcons, setShowDietaryIcons,
 
-        canvasWidth, setCanvasWidth,
-        canvasHeight, setCanvasHeight,
+        canvasWidth,
+        canvasHeight,
+        modifyCanvasSize,
+        configPatches,
 
         patches, seatPatches,
         clearPatches,
