@@ -100,6 +100,9 @@ export function SvgDrawer(
         context.setPanY(context.panY() + (newMouseY - oldMouseY) * newZoom);
     }
 
+    const backgroundSizeX = createMemo(() => Math.floor(50 * context.zoom()));
+    const backgroundSizeY = createMemo(() => Math.floor(50 * context.zoom()));
+
     return (
         <div class="relative w-full h-full select-none cursor-move overflow-hidden">
             <svg 
@@ -112,6 +115,9 @@ export function SvgDrawer(
 
                 style={{
                     "background-color": "white",
+                    "background-image": `radial-gradient(rgb(200 200 200 / ${Math.min(context.zoom() * 2, 1)}) ${Math.max(1.2 * context.zoom(), 1)}px, transparent 0)`,
+                    "background-size": `${backgroundSizeX()}px ${backgroundSizeY()}px`,
+                    "background-position": `${((context.panX() + context.clientWidth() / 2 + backgroundSizeX() / 2) % backgroundSizeX())}px ${((context.panY() + context.clientHeight() / 2 + backgroundSizeY() / 2) % backgroundSizeY())}px`,
                 }}
                 
                 on:wheel={onWheel}
@@ -140,10 +146,6 @@ export function SvgDrawer(
                     <pattern id="grid" width={cellX()} height={cellY()} patternUnits="userSpaceOnUse">
                         <path d={`M ${cellX()} 0 L 0 0 0 ${cellY()}`} fill="none" stroke="#cccccc" stroke-width="1" />
                     </pattern>
-
-                    <clipPath id="canvas-clip">
-                        <rect x="0" y="0" width={context.canvasWidth()} height={context.canvasHeight()} />
-                    </clipPath>
                 </defs>
 
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
@@ -171,15 +173,13 @@ export function SvgDrawer(
                         stroke="black"
                         stroke-width="4"
                     />
-                    <g clip-path='url(#canvas-clip)'>
-                        <For each={context.itemsArray}>
-                            {item => {
-                                return (
-                                    <SvgItemFactory item={item} />
-                                );
-                            }}
-                        </For>
-                    </g>
+                    <For each={context.itemsArray}>
+                        {item => {
+                            return (
+                                <SvgItemFactory item={item} />
+                            );
+                        }}
+                    </For>
                 </g>
                 <SvgLogo />
             </svg>

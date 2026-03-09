@@ -19,7 +19,7 @@ export function SvgItemFactory(
     let [lastMouseX, setLastMouseX] = createSignal(0);
     let [lastMouseY, setLastMouseY] = createSignal(0);
 
-    if(props.item.kind != SvgItemType.TABLE_SEAT) {
+    /*if(props.item.kind != SvgItemType.TABLE_SEAT) {
         createEffect(() => {
             context.canvasWidth();
             context.canvasHeight();
@@ -72,7 +72,7 @@ export function SvgItemFactory(
                 });
             });
         })
-    }
+    }*/
 
     function onContainerPointerDown(e: PointerEvent) {
         e.stopPropagation();

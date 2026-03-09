@@ -390,13 +390,13 @@ export function AppBottomMenu(props: {
                 <PropertyInput
                     title="Szerokość (m)"
                     type="number"
-                    min={10}
+                    min={1}
                     value={[canvas.canvasWidth() / 100, (value) => canvas.modifyCanvasSize(value * 100, canvas.canvasHeight()) ]}
                 />
                 <PropertyInput
                     title="Wysokość (m)"
                     type="number"
-                    min={10}
+                    min={1}
                     value={[canvas.canvasHeight() / 100, (value) => canvas.modifyCanvasSize(canvas.canvasWidth(), value * 100)]}
                 />
                 <div class="h-0.5"></div>
