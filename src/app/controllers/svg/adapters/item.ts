@@ -22,6 +22,7 @@ export function decodeBackendElement(element: DeepPartial<API.Element>) {
     assign(item, "w", element.config?.width, num);
     assign(item, "h", element.config?.height, num);
     assign(item, "angle", element.config?.angle, num);
+    assign(item, "order", element.index, str);
     
     assign(props, "name", element.name, str);
     assign(props, "seats", element.config?.seats, num);
@@ -63,6 +64,7 @@ export function encodeClientItem(item: DeepPartial<SvgItem>) {
     assign(element, "icon", item.props?.icon, str);
     assign(element, "x", item.x, num);
     assign(element, "y", item.y, num);
+    assign(element, "index", item.order, str);
     assign(element, "color", item.props?.color, color);
     assign(element, "kind", item.kind, str);
     assign(element, "spacing", item.props?.seat_spacing, num);

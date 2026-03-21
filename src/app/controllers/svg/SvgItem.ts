@@ -77,6 +77,7 @@ export function createSvgItemFromBlueprint<T extends PropertiesDescriptor>(
         id: null,
         kind: blueprint.type,
         x: 0, y: 0,
+        order: null,
         w: 256, h: 256,
         angle: 0,
         props,
@@ -90,6 +91,7 @@ export function cloneSvgItem(original: SvgItem) {
     let copy = deepCloneObj(original);
 
     copy.id = null;
+    copy.order = null;
     copy.last_update = Date.now();
 
     return copy;
@@ -143,6 +145,9 @@ export interface SvgItem<Props = Record<string, any>> {
 
     x: number;
     y: number;
+
+    order?: string;
+
     w: number;
     h: number;
 

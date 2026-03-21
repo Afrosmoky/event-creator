@@ -138,7 +138,7 @@ export function SvgItemTableCircle(
                 props: {
                     seat_configs: seats
                 }
-            });
+            }, false);
         });
     }
 

@@ -1,6 +1,7 @@
 import { batch, createContext, createEffect, createResource, createSignal, onCleanup, onMount, useContext } from "solid-js";
 import type { SvgItem } from "../controllers/svg/SvgItem";
 import { createStore, produce, unwrap } from "solid-js/store";
+import { generateKeyBetween } from "fractional-indexing";
 
 export type SvgDrawerContextType = ReturnType<typeof makeSvgDrawerContext>;
 
@@ -376,6 +377,22 @@ export const makeSvgDrawerContext = () => {
     
     const removed_ids: Map<number, boolean> = new Map();
 
+    function bringToFront(id: number) {
+        const item = items[id];
+        if(!item) {
+            return;
+        }
+
+        if(itemsArray[itemsArray.length - 1].id === id) {
+            return;
+        }
+
+        const maxOrder = itemsArray.length > 0 ? itemsArray[itemsArray.length - 1].order : null;
+        const newOrder = generateKeyBetween(maxOrder, null);
+
+        modifyItem(id, { order: newOrder });
+    }
+
     function clearPatches() {
         setPatches(prev => []);
         setSeatPatches(prev => []);
@@ -526,7 +543,20 @@ export const makeSvgDrawerContext = () => {
 
     function applyPatch(patch: Patch) {
         if(patch.type === 'add') {
-            setItemsArray(itemsArray.length, patch.item);
+            if(!patch.item.order) {
+                const lastOrder = itemsArray.length > 0 ? itemsArray[itemsArray.length - 1].order : null;
+                patch.item.order = generateKeyBetween(lastOrder, null);
+
+                console.log(`Generated order ${patch.item.order} for item ${patch.item.id}`);
+
+                setItemsArray(itemsArray.length, patch.item);
+            } else {
+                const newItemsArray = [...itemsArray, patch.item];
+                newItemsArray.sort((a, b) => a.order < b.order ? -1 : 1);
+
+                setItemsArray(newItemsArray);
+            }
+
             setItems(patch.id, patch.item);
         } else if(patch.type === 'del') {
             removed_ids.set(patch.id, true);
@@ -545,6 +575,15 @@ export const makeSvgDrawerContext = () => {
                 applyDiff(item, patch.value);
                 return item;
             }));
+
+            if(patch.value.order) {
+                console.log(`Updating order of item ${patch.id} to ${patch.value.order}`);
+
+                const newItemsArray = [...itemsArray];
+                newItemsArray.sort((a, b) => a.order < b.order ? -1 : 1);
+
+                setItemsArray(newItemsArray);
+            }
         }
     }
 
@@ -686,6 +725,7 @@ export const makeSvgDrawerContext = () => {
         items,
         itemsArray,
         removed_ids,
+        bringToFront,
         centerPan,
         zoomToFit,
         focusedItem, setFocusedItem,

@@ -23,6 +23,7 @@ export function SvgItemFactory(
         e.stopPropagation();
         e.preventDefault();
 
+        context.bringToFront(props.item.id);
         context.setFocusedItem({ id: props.item.id });
         if(props.item.position_locked) {
             console.warn(`Item is position locked!`);
