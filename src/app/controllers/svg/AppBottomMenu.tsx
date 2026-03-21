@@ -3,7 +3,7 @@ import { createSignal, For, onCleanup, onMount } from "solid-js";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { createPngBlobFromSvg, createSvgBlobFromSvg, openBlobInWindow, saveBlobToFile } from "@/app/utils/svg";
 import { DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, UsersRoundIcon } from "lucide-solid";
-import { createSvgItemFromBlueprint, SvgItems, type SvgItemBlueprint } from "./SvgItem";
+import { createSvgItemFromBlueprint, deepCloneObj, SvgItems, type SvgItemBlueprint } from "./SvgItem";
 import { SvgIcon } from "./SvgItemIcon";
 import API from "@/app/api/API";
 import PropertyInput from "./PropertyInput";
@@ -371,14 +371,14 @@ export function AppBottomMenu(props: {
                 continue;
             }
 
-            item.props[key] = config.overwrite[key];
+            item.props[key] = deepCloneObj(config.overwrite[key]);
         }
 
         item.x = -canvas.panX() / canvas.zoom();
 		item.y = -canvas.panY() / canvas.zoom();
 
         item = canvas.addItem(undefined, item);
-		canvas.setFocusedItemIndex(item.id);
+        canvas.setFocusedItem({ id: item.id });
     }
 
     return (

@@ -29,7 +29,7 @@ export default function GuestListPanel(
     }
 
     return (
-        <Inspector show={props.show && context.focusedItemIndex() < 0}>
+        <Inspector show={props.show && !context.focusedItem()}>
             <InspectorHead>
                 <label class="self-start pt-2 pb-1 px-1 font-bold text-2xl">Lista gości</label>
                 <label class="self-start px-1 pb-2 text-sm text-foreground-muted">

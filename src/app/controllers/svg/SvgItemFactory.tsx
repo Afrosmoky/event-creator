@@ -4,7 +4,7 @@ import { SvgItemTable } from "./SvgItemTable";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItemIcon } from "./SvgItemIcon";
 import { SvgItemTableCircle } from "./SvgItemTableCircle";
-import { SvgItemTableSeat } from "./SvgItemTableSeat";
+import { TableSeat } from "./TableSeat";
 import { SvgItemText } from "./SvgItemText";
 
 export interface SvgItemFactoryProps {
@@ -19,66 +19,11 @@ export function SvgItemFactory(
     let [lastMouseX, setLastMouseX] = createSignal(0);
     let [lastMouseY, setLastMouseY] = createSignal(0);
 
-    /*if(props.item.kind != SvgItemType.TABLE_SEAT) {
-        createEffect(() => {
-            context.canvasWidth();
-            context.canvasHeight();
-
-            const totalWidth = props.item.w + SEAT_RADIUS * 2 + 8;
-            const totalHeight = props.item.h + SEAT_RADIUS * 2 + 8;
-
-            const xMin = props.item.x - totalWidth / 2;
-            const xMax = props.item.x + totalWidth / 2;
-            const yMin = props.item.y - totalHeight / 2;
-            const yMax = props.item.y + totalHeight / 2;
-
-            untrack(() => {
-                batch(() => {
-                    if(totalWidth > context.canvasWidth()) {
-                        console.warn(`Item is wider than canvas! Resizing canvas width to fit the item.`);
-                        context.modifyItem(
-                            props.item.id,
-                            {
-                                w: context.canvasWidth() - SEAT_RADIUS * 2 - 8
-                            }
-                        );
-                    } else {
-                        if(xMin < 0) {
-                            console.warn(`Item is out of canvas bounds on the left! Moving it to the right.`);
-                            context.modifyItem(props.item.id, { x: totalWidth / 2 });
-                        } else if(xMax > context.canvasWidth()) {
-                            console.warn(`Item is out of canvas bounds on the right! Moving it to the left.`);
-                            context.modifyItem(props.item.id, { x: context.canvasWidth() - totalWidth / 2 });
-                        }
-                    }
-
-                    if(totalHeight > context.canvasHeight()) {
-                        console.warn(`Item is taller than canvas! Resizing canvas height to fit the item.`);
-                        context.modifyItem(
-                            props.item.id,
-                            {
-                                h: context.canvasHeight() - SEAT_RADIUS * 2 - 8
-                            }
-                        );
-                    } else {
-                        if(yMin < 0) {
-                            console.warn(`Item is out of canvas bounds on the top! Moving it down.`);
-                            context.modifyItem(props.item.id, { y: totalHeight / 2 });
-                        } else if(yMax > context.canvasHeight()) {
-                            console.warn(`Item is out of canvas bounds on the bottom! Moving it up.`);
-                            context.modifyItem(props.item.id, { y: context.canvasHeight() - totalHeight / 2 });
-                        }
-                    }
-                });
-            });
-        })
-    }*/
-
     function onContainerPointerDown(e: PointerEvent) {
         e.stopPropagation();
         e.preventDefault();
 
-        context.setFocusedItemIndex(props.item.id);
+        context.setFocusedItem({ id: props.item.id });
         if(props.item.position_locked) {
             console.warn(`Item is position locked!`);
             return;
@@ -143,9 +88,6 @@ export function SvgItemFactory(
                 </Match>
                 <Match when={props.item.kind === "ICON"}>
                     <SvgItemIcon item={props.item}/>
-                </Match>
-                <Match when={props.item.kind == SvgItemType.TABLE_SEAT}>
-                    <SvgItemTableSeat item={props.item}/>
                 </Match>
                 <Match when={props.item.kind === SvgItemType.TEXT}>
                     <SvgItemText item={props.item} />

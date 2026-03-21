@@ -288,7 +288,17 @@ export function getItemDiff<T extends Record<string, any>>(self: T, other: T): D
 
 export function applyDiff<T extends Record<string, any>>(self: any, diff: T) {
     for(const key in diff) {
-        if(diff[key] && typeof diff[key] == 'object') {
+        if(diff[key] && Array.isArray(diff[key])) {
+            if(!self[key] || !Array.isArray(self[key])) {
+                self[key] = [];
+            }
+
+            if(self[key].length != diff[key].length) {
+                self[key].length = diff[key].length;
+            }
+
+            applyDiff(self[key], diff[key]);
+        } else if(diff[key] && typeof diff[key] == 'object') {
             if(!self[key] || typeof self[key] != 'object') {
                 self[key] = {};
             }
@@ -306,7 +316,19 @@ export function clear_same<T extends Record<string, any>>(self: T, other: T) {
             continue;
         }
 
-        if(typeof self[key] === 'object' && typeof other[key] === 'object') {
+        if(Array.isArray(self[key])) {
+            if(!Array.isArray(other[key])) {
+                continue;
+            }
+
+            for(let i = 0; i < self[key].length; ++i) {
+                if(i >= other[key].length) {
+                    break;
+                }
+
+                clear_same(self[key][i], other[key][i]);
+            }
+        } else if(typeof self[key] === 'object' && typeof other[key] === 'object') {
             clear_same(self[key], other[key]);
 
             if(Object.keys(self[key]).length === 0) {
@@ -323,11 +345,15 @@ export function clear_same<T extends Record<string, any>>(self: T, other: T) {
 let seat_nonce = 0;
 let item_nonce = 0;
 
+export interface FocusedItem {
+    id: number;
+    props?: any;
+}
+
 export const makeSvgDrawerContext = () => {
     const [items, setItems] = createStore<{ [id: string]: SvgItem | undefined }>({});
     const [itemsArray, setItemsArray] = createStore<SvgItem[]>([]);
-    const [focusedItemIndex, setFocusedItemIndex] = createSignal<number>(-1);
-    const [focusedSeatIndex, setFocusedSeatIndex] = createSignal<number>(-1);
+    const [focusedItem, setFocusedItem] = createSignal<FocusedItem>(null);
     const [zoom, setZoom] = createSignal<number>(0.25);
     const [panX, setPanX] = createSignal(0);
     const [panY, setPanY] = createSignal(0);
@@ -459,15 +485,15 @@ export const makeSvgDrawerContext = () => {
         let refocus = false;
 
         batch(() => {
-            if(focusedItemIndex() === oldId) {
-                setFocusedItemIndex(-1);
+            if(focusedItem()?.id === oldId) {
+                setFocusedItem(null);
                 refocus = true;
             }
 
             setItems(oldId, "id", newId);
             setItems(newId, items[oldId]);
             setItems(oldId, undefined);
-            refocus && setFocusedItemIndex(newId);
+            refocus && setFocusedItem({ id: newId })
         });
     }
 
@@ -505,9 +531,8 @@ export const makeSvgDrawerContext = () => {
         } else if(patch.type === 'del') {
             removed_ids.set(patch.id, true);
 
-            if(focusedItemIndex() === patch.id) {
-                setFocusedItemIndex(-1);
-                setFocusedSeatIndex(-1);
+            if(focusedItem()?.id === patch.id) {
+                setFocusedItem(null);
             }
 
             const arrayIndex = itemsArray.findIndex(o => o.id == patch.id);
@@ -663,11 +688,7 @@ export const makeSvgDrawerContext = () => {
         removed_ids,
         centerPan,
         zoomToFit,
-        //setItems,
-        focusedItemIndex,
-        setFocusedItemIndex,
-        focusedSeatIndex,
-        setFocusedSeatIndex,
+        focusedItem, setFocusedItem,
         zoom, setZoom,
         panX, setPanX,
         panY, setPanY,

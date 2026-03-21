@@ -60,7 +60,7 @@ export function SvgDrawer(
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         
-        context.setFocusedItemIndex(-1);
+        context.setFocusedItem(null);
     }
 
     function onPointerMove(e: PointerEvent) {
@@ -186,29 +186,11 @@ export function SvgDrawer(
 
             <svg class="absolute top-0 left-0 pointer-events-none" width="100%" height="100%">
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
-                    <Show when={context.focusedItemIndex() != -1}>
-                        <SvgItemFocus item={context.items[context.focusedItemIndex()]!} />
-                        {/*<SvgItemBBox item={context.items[context.focusedItemIndex()]!} />*/}
+                    <Show when={!!context.focusedItem()}>
+                        <SvgItemFocus item={context.focusedItem()} />
                     </Show>
                 </g>
             </svg>
         </div>
-    );
-}
-
-function SvgItemBBox(props: { item: any }) {
-    const totalWidth = createMemo(() => props.item.w + (props.item.props?.seat_radius || 0) * 4 + 8 * 2);
-    const totalHeight = createMemo(() => props.item.h + (props.item.props?.seat_radius || 0) * 4 + 8 * 2);
-
-    return (
-        <rect
-            x={props.item.x - totalWidth() / 2}
-            y={props.item.y - totalHeight() / 2}
-            width={totalWidth()}
-            height={totalHeight()}
-            fill="none"
-            stroke="red"
-            stroke-width="1"
-        />
     );
 }

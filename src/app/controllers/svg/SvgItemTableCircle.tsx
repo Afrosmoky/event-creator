@@ -1,7 +1,8 @@
-import { batch, createEffect, createMemo, createSignal, For, onCleanup, untrack } from "solid-js";
-import { clamp, createSvgItemFromBlueprint, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SEAT_RADIUS, SvgItem, SvgItems, SvgItemTableCircleProps, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
+import { batch, createEffect, createMemo, For, untrack } from "solid-js";
+import { clamp, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SEAT_RADIUS, SvgItem, SvgItemTableCircleProps, TableSeatConfigProps } from "./SvgItem";
 import { createStore } from "solid-js/store";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { TableSeat } from "./TableSeat";
 
 interface SvgItemTableCircleComponentProps {
     item: SvgItem<SvgItemTableCircleProps>;
@@ -12,17 +13,8 @@ export function SvgItemTableCircle(
 ) {
     const canvas = useSvgDrawerContext();
     const [state, setState] = createStore({
-        seats: [] as SvgItem<SvgItemTableSeatProps>[],
         radius: createMemo(() => props.item.w / 2)
     });
-
-    onCleanup(() => {
-        batch(() => {
-            for(const seat of state.seats) {
-                canvas.removeItem(seat.id, false);
-            }
-        })
-    })
 
     createEffect(() => {
         const currentSeatRadius = props.item.props.seat_radius;
@@ -122,7 +114,7 @@ export function SvgItemTableCircle(
     }
 
     function calculatePoints() {
-        const seats: SvgItem<SvgItemTableSeatProps>[] = [];
+        const seats: TableSeatConfigProps[] = [];
         const r = state.radius() + props.item.props.seat_radius + 8;
         const total = props.item.props.seats;
 
@@ -133,33 +125,20 @@ export function SvgItemTableCircle(
             const x = Math.cos(rad) * r;
             const y = Math.sin(rad) * r;
 
-            const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT);
-            seat.parent = props.item;
-            seat.x = x;
-            seat.y = y;
-            seat.w = SEAT_RADIUS * 2;
-            seat.h = SEAT_RADIUS * 2;
-            seat.props.table_angle = (-angle + 90 + 360) % 360;
-            seat.props.radius = props.item.props.seat_radius;
-            seat.props.index = seats.length;
-
-            seats.push(seat);
+            seats.push({
+                x: x + state.radius(),
+                y: y + state.radius(),
+                radius: SEAT_RADIUS,
+                angle: (-angle + 90 + 360) % 360,
+            });
         }
 
         untrack(() => {
-            batch(() => {
-                const oldSeats = state.seats;
-                for(const seat of oldSeats) {
-                    canvas.removeItem(seat.id, false);
+            canvas.modifyItem(props.item.id, {
+                props: {
+                    seat_configs: seats
                 }
-
-                for(const seat of seats) {
-                    canvas.addItem(undefined, seat, false);
-                }
-            })
-            
-
-            setState("seats", seats);
+            });
         });
     }
 
@@ -242,6 +221,15 @@ export function SvgItemTableCircle(
             >
                 {props.item.props.name}
             </text>
+
+            <For each={props.item.props.seat_configs}>
+                {(config, index) => (
+                    <TableSeat 
+                        parent={props.item}
+                        index={index()}
+                    />
+                )}
+            </For>
         </>
     )
 }

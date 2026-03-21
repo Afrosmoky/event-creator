@@ -28,7 +28,7 @@ export default function ItemTableInspector(
         clone.y += 10;
 
         context.addItem(clone.id, clone);
-        context.setFocusedItemIndex(clone.id);
+        context.setFocusedItem({ id: clone.id });
     }
 
     function onReleaseAllSeats() {

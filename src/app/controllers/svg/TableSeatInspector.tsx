@@ -1,13 +1,14 @@
 import { Guest, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { SvgItem, SvgItemTableSeatProps } from "./SvgItem";
+import { SvgItem, SvgItemTableProps } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
 import { InspectorCategory, InspectorCategoryContent, InspectorContent } from "./InspectorPresets";
-import { createMemo, For, Match, Show, Switch } from "solid-js";
+import { createEffect, createMemo, For, Match, Show, Switch, untrack } from "solid-js";
 import { UnlinkIcon } from "lucide-solid";
 import { GuestIcon } from "./GuestIcon";
 
 interface TableSeatInspectorProps {
-    item: SvgItem<SvgItemTableSeatProps>;
+    table: SvgItem<SvgItemTableProps>;
+    index: number;
 }
 
 export default function TableSeatInspector(
@@ -16,9 +17,13 @@ export default function TableSeatInspector(
     const i18n = useI18nContext();
     const context = useSvgDrawerContext();
 
+    const seat = createMemo(() => {
+        return props.table.props.seat_configs[props.index];
+    })
+
     const seatedGuest = createMemo(() => {
         for(const seated of context.seats) {
-            if(seated.table_id === props.item.parent?.id && seated.seat_index === props.item.props.index) {
+            if(seated.table_id === props.table.id && seated.seat_index === props.index) {
                 return context.guests.find(o => o.id === seated.guest_id);
             }
         }
@@ -30,15 +35,23 @@ export default function TableSeatInspector(
         return context.guests.filter(guest => {
             return !context.isGuestSeated(guest.id);
         });
-    })
+    });
+
+    /*createEffect(() => {
+        if(!seat()) {
+            untrack(() => {
+                context.setFocusedItem(null);
+            })
+        }
+    })*/
 
     function onGuestClick(guest: Guest) {
-        if(props.item.parent?.id === undefined) {
+        if(props.table.id === undefined) {
             console.warn(`Can't seat the guest at invalid table`);
             return;
         }
 
-        context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
+        context.seatGuest(guest.id, props.table.id, props.index);
     }
 
     function onReleaseSeat() {

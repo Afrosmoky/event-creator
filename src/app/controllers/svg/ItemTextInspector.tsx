@@ -27,7 +27,7 @@ export default function ItemTextInspector(
         clone.y += 10;
 
         context.addItem(undefined, clone);
-        context.setFocusedItemIndex(clone.id);
+        context.setFocusedItem({ id: clone.id });
     }
 
     return (
