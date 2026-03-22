@@ -20,6 +20,9 @@
   /* accent */
   --color-accent: #C6A96A;
 
+  /* success */
+  --color-success: #6AA96A;      /* muted green */
+
   /* error */
   --color-error: #B85C57;        /* muted brick red */
   --color-error-hover: #A64F4A;  /* darker for interaction */
