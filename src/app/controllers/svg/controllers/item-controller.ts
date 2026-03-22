@@ -4,8 +4,9 @@ import { createItemPolling } from "../polling/item-polling";
 
 export function createItemController(
     ballroomId: () => string,
-    canvas: SvgDrawerContextType
+    canvas: SvgDrawerContextType,
+    onPollFinished?: () => void
 ) {
     createItemSync(ballroomId, canvas);
-    createItemPolling(ballroomId, canvas);
+    createItemPolling(ballroomId, canvas, onPollFinished);
 }

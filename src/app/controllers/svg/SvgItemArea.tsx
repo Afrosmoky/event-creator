@@ -23,11 +23,11 @@ export function SvgItemArea(
         const zoom = context.zoom();
 
         batch(() => {
-            if(zoom <= 0.2) {
+            if(zoom <= 0.15) {
                 setCellX(500);
                 setCellY(500);
                 setZoom(3);
-            } else if(zoom <= 0.5) {
+            } else if(zoom <= 0.4) {
                 setCellX(200);
                 setCellY(200);
                 setZoom(2);
@@ -48,7 +48,7 @@ export function SvgItemArea(
             </defs>
             
             <text y={-16 * zoom()} font-size={`${16 * zoom()}px`} fill="#444444">
-                Sala o wymiarach {item().w / 100}x{item().h / 100} metrów
+                {item().props.name ?? ""}
             </text>
             <rect 
                 x="0"

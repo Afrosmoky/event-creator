@@ -10,7 +10,8 @@ const backendTypeToBlueprint = {
     ["TABLE_T"]: SvgItems.TABLE_T,
     ["TABLE_U"]: SvgItems.TABLE_U,
     ["ICON"]: SvgItems.ICON,
-    ["TEXT"]: SvgItems.TEXT
+    ["TEXT"]: SvgItems.TEXT,
+    ["AREA"]: SvgItems.AREA,
 } as { [key: string]: SvgItemBlueprint }; 
 
 export function decodeBackendElement(element: DeepPartial<API.Element>) {

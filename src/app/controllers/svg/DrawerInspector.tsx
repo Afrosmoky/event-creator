@@ -7,6 +7,7 @@ import { CopyIcon, Trash2Icon } from "lucide-solid";
 import ItemIconInspector from "./ItemIconInspector";
 import TableSeatInspector from "./TableSeatInspector";
 import ItemTextInspector from "./ItemTextInspector";
+import ItemAreaInspector from "./ItemAreaInspector";
 
 export default function DrawerInspector(
     props: unknown
@@ -29,6 +30,10 @@ export default function DrawerInspector(
             || context.items[item.id]?.kind === SvgItemType.TABLE_T
             || context.items[item.id]?.kind === SvgItemType.TABLE_RECT
             || context.items[item.id]?.kind === SvgItemType.TABLE_CIRCLE;
+    }
+
+    function isArea(item: FocusedItem) {
+        return context.items[item.id]?.kind === SvgItemType.AREA;
     }
 
     function isSeat(item: FocusedItem) {
@@ -57,6 +62,8 @@ export default function DrawerInspector(
                             ? "Ikona " : 
                             isText(focusedItem())
                             ? "Tekst " :
+                            isArea(focusedItem())
+                            ? "Sala " :
                             "Nieznany "
                         }
                     </span>
@@ -82,6 +89,9 @@ export default function DrawerInspector(
                     </Match>
                     <Match when={isText(focusedItem())}>
                         <ItemTextInspector item={context.items[focusedItem().id] as any} />
+                    </Match>
+                    <Match when={isArea(focusedItem())}>
+                        <ItemAreaInspector item={context.items[focusedItem().id] as any} />
                     </Match>
                 </Switch>
             </InspectorContent>

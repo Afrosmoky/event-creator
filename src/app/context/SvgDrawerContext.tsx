@@ -449,17 +449,62 @@ export const makeSvgDrawerContext = () => {
     }
 
     function zoomToFit(padding = 150) {
-        const contentWidth = canvasWidth() + padding * 2;
-        const contentHeight = canvasHeight() + padding * 2;
+        const bounds = calculateBounds();
 
-        const zoomX = clientWidth() / contentWidth;
-        const zoomY = clientHeight() / contentHeight;
+        const width = (bounds.maxX - bounds.minX) + padding * 2;
+        const height = (bounds.maxY - bounds.minY) + padding * 2;
 
-        const newZoom = Math.min(zoomX, zoomY);
+        const centerX = (bounds.minX + bounds.maxX) / 2;
+        const centerY = (bounds.minY + bounds.maxY) / 2;
+
+        const zoomX = clientWidth() / width;
+        const zoomY = clientHeight() / height;
+
+        const newZoom = Math.max(0.1, Math.min(0.75, Math.min(zoomX, zoomY)));
         setZoom(newZoom);
 
-        setPanX(-canvasWidth() / 2 * newZoom);
-        setPanY(-canvasHeight() / 2 * newZoom);
+        setPanX(-centerX * newZoom);
+        setPanY(-centerY * newZoom);
+    }
+
+    function calculateBounds() {
+        if(itemsArray.length === 0) {
+            return {
+                minX: 0,
+                minY: 0,
+                maxX: 0,
+                maxY: 0
+            };
+        }
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for(const item of itemsArray) {
+            if(removed_ids.get(item.id)) {
+                continue;
+            }
+
+            const leftX = item.x - item.w / 2;
+            const rightX = item.x + item.w / 2;
+
+            const topY = item.y - item.h / 2;
+            const bottomY = item.y + item.h / 2;
+
+            if(leftX < minX) minX = leftX;
+            if(rightX > maxX) maxX = rightX;
+            if(topY < minY) minY = topY;
+            if(bottomY > maxY) maxY = bottomY;
+        }
+
+        return {
+            minX,
+            minY,
+            maxX,
+            maxY
+        };
     }
 
     function addItem(id: number, item: SvgItem, emitPatch = true) {

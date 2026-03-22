@@ -4,7 +4,8 @@ import { createItemFromBackend, decodeBackendElement } from "../adapters/item";
 
 export function createItemPolling(
     ballroomId: () => string,
-    canvas: SvgDrawerContextType
+    canvas: SvgDrawerContextType,
+	onPollFinished?: () => void
 ) {
     let lastState: Record<string, API.Element> | null = null;
 
@@ -57,6 +58,10 @@ export function createItemPolling(
 		}
 
 		lastState = state;
+		
+		if(onPollFinished) {
+			onPollFinished();
+		}
 	}
     
     createPolling(

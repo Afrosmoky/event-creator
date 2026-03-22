@@ -387,21 +387,6 @@ export function AppBottomMenu(props: {
     return (
         <div class="flex flex-col justify-end w-48 h-full gap-4 text-foreground bg-card">
             <div class="grow overflow-y-auto overscroll-none p-2 flex flex-col gap-4 no-scrollbar">
-                <h3 class="uppercase text-sm font-semibold text-foreground border-b border-dashed border-border">
-                    Wymiary sali
-                </h3>
-                <PropertyInput
-                    title="Szerokość (m)"
-                    type="number"
-                    min={1}
-                    value={[canvas.canvasWidth() / 100, (value) => canvas.modifyCanvasSize(value * 100, canvas.canvasHeight()) ]}
-                />
-                <PropertyInput
-                    title="Wysokość (m)"
-                    type="number"
-                    min={1}
-                    value={[canvas.canvasHeight() / 100, (value) => canvas.modifyCanvasSize(canvas.canvasWidth(), value * 100)]}
-                />
                 <button 
                     class="p-3 rounded-md bg-background border border-border flex justify-center cursor-pointer"
                     on:click={() => createNewArea()}
