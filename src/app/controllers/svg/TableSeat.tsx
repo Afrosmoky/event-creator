@@ -43,12 +43,22 @@ export function TableSeat(
     function onPointerUp(event: PointerEvent) {
         const guest = context.guests.find(o => o.id === context.draggingGuest());
         if(guest) {
+            if(!props.parent.props.name) {
+                alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
+                return;
+            }
+
             context.seatGuest(guest.id, props.parent.id, props.index);
             return;
         }
 
         const group = context.draggingGroup();
         if(!group) {
+            return;
+        }
+
+        if(!props.parent.props.name) {
+            alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
             return;
         }
 

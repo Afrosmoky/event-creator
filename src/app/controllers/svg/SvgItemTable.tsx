@@ -208,8 +208,46 @@ export function SvgItemTable(
     }
 
     function onPointerUp(event: PointerEvent) {
+        const guest = canvas.guests.find(o => o.id === canvas.draggingGuest());
+        if(guest) {
+            if(!props.item.props.name) {
+                alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
+                return;
+            }
+            
+            const occupiedSeats = canvas.getTableSeats(props.item.id);
+            if(occupiedSeats.length >= props.item.props.seats) {
+                alert("Ten stół jest już pełny!");
+                return;
+            }
+
+            const availableSeats = new Set<number>();
+            for(let i = 0; i < props.item.props.seats; ++i) {
+                availableSeats.add(i);
+            }
+
+            for(const seat of occupiedSeats) {
+                availableSeats.delete(seat.seat_index);
+            }
+
+            if(availableSeats.size === 0) {
+                alert("Ten stół jest już pełny!");
+                return;
+            }
+
+            const minimumAvailableIndex = Math.min(...availableSeats);
+            canvas.seatGuest(guest.id, props.item.id, minimumAvailableIndex);
+
+            return;
+        }
+
         const group = canvas.draggingGroup();
         if(!group) {
+            return;
+        }
+
+        if(!props.item.props.name) {
+            alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
             return;
         }
 
