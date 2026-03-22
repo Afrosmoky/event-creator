@@ -6,6 +6,7 @@ import { SvgItemIcon } from "./SvgItemIcon";
 import { SvgItemTableCircle } from "./SvgItemTableCircle";
 import { TableSeat } from "./TableSeat";
 import { SvgItemText } from "./SvgItemText";
+import { SvgItemArea } from "./SvgItemArea";
 
 export interface SvgItemFactoryProps {
     item: SvgItem<any>;
@@ -92,6 +93,9 @@ export function SvgItemFactory(
                 </Match>
                 <Match when={props.item.kind === SvgItemType.TEXT}>
                     <SvgItemText item={props.item} />
+                </Match>
+                <Match when={props.item.kind === SvgItemType.AREA}>
+                    <SvgItemArea item={props.item} />
                 </Match>
                 <Match when={true}>
                     <div>Unknown item kind</div>

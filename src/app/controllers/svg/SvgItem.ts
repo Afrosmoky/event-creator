@@ -133,7 +133,8 @@ export enum SvgItemType {
     TABLE_T = "TABLE_T",
     TABLE_U = "TABLE_U",
     ICON = "ICON",
-    TEXT = "TEXT"
+    TEXT = "TEXT",
+    AREA = "AREA"
 }
 
 export interface SvgItem<Props = Record<string, any>> {
@@ -413,6 +414,20 @@ export function isSvgItemText(item: SvgItem<any>): item is SvgItem<SvgItemTextPr
     return item.kind === "TEXT";
 }
 
+export const SvgItemAreaPropsDef = createTypeProps({
+    "name": {
+        type: "string",
+        name: "prop_name",
+        default: ""
+    },
+});
+
+export type SvgItemAreaProps = PropsFromDescriptor<typeof SvgItemAreaPropsDef>;
+
+export function isSvgItemArea(item: SvgItem<any>): item is SvgItem<SvgItemAreaProps> {
+    return item.kind === "AREA";
+}
+
 export const SvgItems = {
     TABLE_RECT: {
         type: "TABLE_RECT",
@@ -428,7 +443,7 @@ export const SvgItems = {
     },
     TABLE_CIRCLE: {
         type: "TABLE_CIRCLE",
-        props: SvgItemTablePropsDef
+        props: SvgItemTableCirclePropsDef
     },
     ICON: {
         type: "ICON",
@@ -437,5 +452,9 @@ export const SvgItems = {
     TEXT: {
         type: "TEXT",
         props: SvgItemTextPropsDef
+    },
+    AREA: {
+        type: "AREA",
+        props: SvgItemAreaPropsDef
     }
 } as const satisfies { [key: string]: SvgItemBlueprint };

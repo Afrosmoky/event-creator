@@ -383,11 +383,14 @@ export const makeSvgDrawerContext = () => {
             return;
         }
 
-        if(itemsArray[itemsArray.length - 1].id === id) {
+        const layers = constructLayers(itemsArray);
+
+        const itemLayer = item.kind === "AREA" ? layers.AREA : layers.NORMAL;
+        if(itemLayer[itemsArray.length - 1]?.id === id) {
             return;
         }
 
-        const maxOrder = itemsArray.length > 0 ? itemsArray[itemsArray.length - 1].order : null;
+        const maxOrder = itemLayer.length > 0 ? itemLayer[itemLayer.length - 1].order : null;
         const newOrder = generateKeyBetween(maxOrder, null);
 
         modifyItem(id, { order: newOrder });
@@ -543,18 +546,10 @@ export const makeSvgDrawerContext = () => {
 
     function applyPatch(patch: Patch) {
         if(patch.type === 'add') {
-            if(!patch.item.order) {
-                const lastOrder = itemsArray.length > 0 ? itemsArray[itemsArray.length - 1].order : null;
-                patch.item.order = generateKeyBetween(lastOrder, null);
-
-                console.log(`Generated order ${patch.item.order} for item ${patch.item.id}`);
-
-                setItemsArray(itemsArray.length, patch.item);
+            if(patch.item.order) {
+                setItemsArray(sortItems([...itemsArray, patch.item]));
             } else {
-                const newItemsArray = [...itemsArray, patch.item];
-                newItemsArray.sort((a, b) => a.order < b.order ? -1 : 1);
-
-                setItemsArray(newItemsArray);
+                setItemsArray(addItemToFront(patch.item, itemsArray));
             }
 
             setItems(patch.id, patch.item);
@@ -578,13 +573,48 @@ export const makeSvgDrawerContext = () => {
 
             if(patch.value.order) {
                 console.log(`Updating order of item ${patch.id} to ${patch.value.order}`);
-
-                const newItemsArray = [...itemsArray];
-                newItemsArray.sort((a, b) => a.order < b.order ? -1 : 1);
-
-                setItemsArray(newItemsArray);
+                setItemsArray(sortItems(itemsArray));
             }
         }
+    }
+
+    function constructLayers(items: SvgItem[]) {
+        const layers: { ["AREA"]: SvgItem[], ["NORMAL"]: SvgItem[] } = {
+            ["AREA"]: [],
+            ["NORMAL"]: []
+        }
+        
+        for(const item of items) {
+            if(item.kind === "AREA") {
+                layers.AREA.push(item);
+            } else {
+                layers.NORMAL.push(item);
+            }
+        }
+
+        return layers;
+    }
+
+    function addItemToFront(item: SvgItem, items: SvgItem[]) {
+        const layers = constructLayers(items);
+
+        const itemLayer = item.kind === "AREA" ? layers.AREA : layers.NORMAL;
+        const maxOrder = itemLayer.length > 0 ? itemLayer[itemLayer.length - 1].order : null;
+        const newOrder = generateKeyBetween(maxOrder, null);
+
+        item.order = newOrder;
+        itemLayer.push(item);
+
+        return [...layers.AREA, ...layers.NORMAL];
+    }
+
+    function sortItems(items: SvgItem[]) {
+        const layers = constructLayers(items);
+
+        layers.AREA.sort((a, b) => a.order < b.order ? -1 : 1);
+        layers.NORMAL.sort((a, b) => a.order < b.order ? -1 : 1);
+
+        return [...layers.AREA, ...layers.NORMAL];
     }
 
     function applySeatPatch(patch: SeatPatch) {

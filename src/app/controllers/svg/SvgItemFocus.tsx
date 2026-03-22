@@ -46,40 +46,56 @@ export function SvgItemFocus(
 
         e.stopPropagation();
 
-        const worldX = e.clientX - context.clientWidth() / 2 - context.panX();
-        const worldY = e.clientY - context.clientHeight() / 2 - context.panY();
-
         const zoom = context.zoom();
-
-        const px = worldX / zoom;
-        const py = worldY / zoom;
-
-        const dx = px - item().x;
-        const dy = py - item().y;
+        const mouseWorldX = (e.clientX - context.clientWidth() / 2 - context.panX()) / zoom;
+        const mouseWorldY = (e.clientY - context.clientHeight() / 2 - context.panY()) / zoom;
 
         // undo rotation
         const angle = -item().angle * Math.PI / 180;
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
 
-        const localX = dx * cos - dy * sin;
-        const localY = dx * sin + dy * cos;
-
-        let newW = item().w;
-        let newH = item().h;
+        let w = item().w;
+        let h = item().h;
+        let x = item().x;
+        let y = item().y;
 
         if (type === "W") {
-            newW = Math.max(1, Math.floor(Math.abs(localX) * 2));
+            const leftWorldX = x - w / 2 * cos;
+            const leftWorldY = y + w / 2 * sin;
+
+            const deltaX = mouseWorldX - leftWorldX;
+            const deltaY = mouseWorldY - leftWorldY;
+
+            w = Math.max(1, Math.floor(deltaX * cos - deltaY * sin));
+
+            const deltaW = w - item().w;
+            
+            x += deltaW / 2 * cos;
+            y -= deltaW / 2 * sin;
         }
 
         if (type === "H") {
-            newH = Math.max(1, Math.floor(Math.abs(localY) * 2));
+            const topWorldX = x - h / 2 * sin;
+            const topWorldY = y - h / 2 * cos;
+
+            const deltaX = mouseWorldX - topWorldX;
+            const deltaY = mouseWorldY - topWorldY;
+
+            h = Math.max(1, Math.floor(deltaX * sin + deltaY * cos));
+
+            const deltaH = h - item().h;
+            
+            x += deltaH / 2 * sin;
+            y += deltaH / 2 * cos;
         }
 
-        if (newW !== item().w || newH !== item().h) {
+        if (w !== item().w || h !== item().h || x !== item().x || y !== item().y) {
             context.modifyItem(props.item.id, {
-                w: newW,
-                h: newH
+                w: w,
+                h: h,
+                x: x,
+                y: y
             });
         }
     }
@@ -105,16 +121,12 @@ export function SvgItemFocus(
 
         e.stopPropagation();
 
-        const worldX = e.clientX - context.clientWidth() / 2 - context.panX();
-        const worldY = e.clientY - context.clientHeight() / 2 - context.panY();
-
         const zoom = context.zoom();
+        const mouseWorldX = (e.clientX - context.clientWidth() / 2 - context.panX()) / zoom;
+        const mouseWorldY = (e.clientY - context.clientHeight() / 2 - context.panY()) / zoom;
 
-        const px = worldX / zoom;
-        const py = worldY / zoom;
-
-        const dx = px - item().x;
-        const dy = py - item().y;
+        const dx = mouseWorldX - item().x;
+        const dy = mouseWorldY - item().y;
 
         const angle = Math.floor(Math.atan2(dy, dx) * 180 / Math.PI + offsetAngle);
         if(angle != item().angle) {
@@ -165,12 +177,9 @@ export function SvgItemFocus(
         props2: { x: number, y: number }
     ) => {
         
-        const dx = props2.x - item().w / 2;
-        const dy = props2.y + item().h / 2;
-        const offsetAngle = Math.atan2(dy, dx) * 180 / Math.PI
-
-        console.log(`D ${dx} ${dy}`)
-        console.log(`Angle ${offsetAngle}`)
+        const dx = createMemo(() => props2.x - item().w / 2);
+        const dy = createMemo(() => props2.y + item().h / 2);
+        const offsetAngle = createMemo(() => Math.atan2(dy(), dx()) * 180 / Math.PI);
 
         return (
             <>
@@ -183,7 +192,7 @@ export function SvgItemFocus(
                     stroke-width="2"
                     style={{ cursor: "pointer" }}
                     on:pointerdown={onRotateHandlePointerDown}
-                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle)}
+                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle())}
                     on:pointerup={onRotateHandlePointerUp}
                 />
                 <circle 
@@ -193,7 +202,7 @@ export function SvgItemFocus(
                     fill="var(--color-white)"
                     style={{ cursor: "pointer" }}
                     on:pointerdown={onRotateHandlePointerDown}
-                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle)}
+                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle())}
                     on:pointerup={onRotateHandlePointerUp}
                 />
             </>
