@@ -1,8 +1,9 @@
-import { batch, createEffect, createMemo, For, untrack } from "solid-js";
-import { createSvgItemFromBlueprint, isSvgItemTableT, isSvgItemTableU, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SvgItem, SvgItems, SvgItemTableSeatProps, type SvgItemTableProps } from "./SvgItem";
-import { createStore, produce, unwrap } from "solid-js/store";
+import { batch, createEffect, createMemo, For, Index, untrack } from "solid-js";
+import { isSvgItemTableT, isSvgItemTableU, MAX_SEAT_SPACING, MIN_SEAT_SPACING, SEAT_RADIUS, SvgItem, TableSeatConfigProps, type SvgItemTableProps } from "./SvgItem";
+import { createStore, produce } from "solid-js/store";
 import { SideParams, SvgItemTableRectGenerator, SvgItemTableTGenerator, SvgItemTableUGenerator, type GeneratorReturn, type Point } from "./SvgItemTableGenerators";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { TableSeat } from "./TableSeat";
 
 interface SvgItemTableComponentProps {
     item: SvgItem<SvgItemTableProps>;
@@ -15,7 +16,6 @@ export function SvgItemTable(
 
     const canvas = useSvgDrawerContext();
     const [state, setState] = createStore({
-        seats: [] as SvgItem<SvgItemTableSeatProps>[],
         points: [] as Point[],
         sides: {} as SideParams
     });
@@ -149,7 +149,7 @@ export function SvgItemTable(
 
     function updateSeats() {
         const { points, sides } = state;
-        const seats: SvgItem<SvgItemTableSeatProps>[] = [];
+        const seats: TableSeatConfigProps[] = [];
 
         for(let i = 0; i < points.length; ++i) {
             const p0 = points[i];
@@ -189,39 +189,65 @@ export function SvgItemTable(
                 const seatX = p0.x + params.seat_start_padding * nx + perpX * (item.props.seat_radius + 4) + stepX * (j + 0.5);
                 const seatY = p0.y + params.seat_start_padding * ny - perpY * (item.props.seat_radius + 4) + stepY * (j + 0.5);
 
-                const seat = createSvgItemFromBlueprint(SvgItems.TABLE_SEAT);
-                seat.parent = item;
-                seat.x = seatX - item.w / 2;
-                seat.y = seatY - item.h / 2;
-                seat.w = 42;
-                seat.h = 42;
-                seat.props.table_angle = table_angle;
-                seat.props.radius = item.props.seat_radius;
-                seat.props.index = seats.length;
-
-                seats.push(seat);
+                seats.push({
+                    x: seatX,
+                    y: seatY,
+                    radius: SEAT_RADIUS,
+                    angle: table_angle,
+                });
             }
         }
 
         untrack(() => {
-            const oldSeats = state.seats;
-            for(const seat of oldSeats) {
-                canvas.removeItem(seat.id, false);
-            }
-
-            for(const seat of seats) {
-                canvas.addItem(undefined, seat, false);
-            }
-
-            setState(produce(state => {
-                state.seats = seats;
-            }));
+            canvas.modifyItem(props.item.id, {
+                props: {
+                    seat_configs: seats
+                }
+            }, false);
         });
     }
 
     function onPointerUp(event: PointerEvent) {
+        const guest = canvas.guests.find(o => o.id === canvas.draggingGuest());
+        if(guest) {
+            if(!props.item.props.name) {
+                alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
+                return;
+            }
+            
+            const occupiedSeats = canvas.getTableSeats(props.item.id);
+            if(occupiedSeats.length >= props.item.props.seats) {
+                alert("Ten stół jest już pełny!");
+                return;
+            }
+
+            const availableSeats = new Set<number>();
+            for(let i = 0; i < props.item.props.seats; ++i) {
+                availableSeats.add(i);
+            }
+
+            for(const seat of occupiedSeats) {
+                availableSeats.delete(seat.seat_index);
+            }
+
+            if(availableSeats.size === 0) {
+                alert("Ten stół jest już pełny!");
+                return;
+            }
+
+            const minimumAvailableIndex = Math.min(...availableSeats);
+            canvas.seatGuest(guest.id, props.item.id, minimumAvailableIndex);
+
+            return;
+        }
+
         const group = canvas.draggingGroup();
         if(!group) {
+            return;
+        }
+
+        if(!props.item.props.name) {
+            alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
             return;
         }
 
@@ -295,6 +321,12 @@ export function SvgItemTable(
             >
                 {item.props.name}
             </text>
+
+            <For each={item.props.seat_configs}>
+                {(seat, index) => (
+                    <TableSeat parent={item} index={index()}/>
+                )}
+            </For>
         </>
     )
 }

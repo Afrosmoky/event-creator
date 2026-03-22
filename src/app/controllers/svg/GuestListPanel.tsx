@@ -11,6 +11,20 @@ export default function GuestListPanel(
     const context = useSvgDrawerContext();
     const [view, setView] = createSignal<"list" | "group">("list");
 
+    const sortedGuests = createMemo(() => {
+        const isSeated: Record<string, boolean> = {};
+        for(const seat of context.seats) {
+            isSeated[seat.guest_id] = true;
+        }
+
+        return context.guests.slice().sort((a, b) => {
+            const aTable = isSeated[a.id] ? 1 : 0;
+            const bTable = isSeated[b.id] ? 1 : 0;
+
+            return aTable - bTable;
+        });
+    });
+
     const groupMap = createMemo(() => {
         const map: Record<string, Guest[]> = {};
 
@@ -29,7 +43,7 @@ export default function GuestListPanel(
     }
 
     return (
-        <Inspector show={props.show && context.focusedItemIndex() < 0}>
+        <Inspector show={props.show && !context.focusedItem()}>
             <InspectorHead>
                 <label class="self-start pt-2 pb-1 px-1 font-bold text-2xl">Lista gości</label>
                 <label class="self-start px-1 pb-2 text-sm text-foreground-muted">
@@ -39,7 +53,7 @@ export default function GuestListPanel(
             <InspectorContent>
                 <Switch>
                     <Match when={view() === "list"}>
-                        <For each={context.guests}>
+                        <For each={sortedGuests()}>
                             {guest => (
                                 <GuestElement guest={guest} />
                             )}
@@ -123,7 +137,9 @@ export function GuestElement(
         }
 
         return context.items[seated()!.table_id];
-    })
+    });
+
+    const pinColor = createMemo(() => !seated() ? "var(--color-error)" : "var(--color-success)");
 
     function onPointerDown(event: PointerEvent) {
         if(event.button != 0) {
@@ -142,7 +158,7 @@ export function GuestElement(
                 <label class="text-foreground font-semibold">{props.guest.name} {props.guest.surname}</label>
             </div>
             <div class="flex gap-1 mt-1">
-                <PinIcon width={16} height="auto" fill="var(--color-error)" color="var(--color-error)" />
+                <PinIcon width={16} height="auto" fill={pinColor()} color={pinColor()} />
                 <label class="text-foreground-muted text-xs italic">
                     {seated() ? 
                         `Stół ${seatedTable()?.props?.name || seated().id} Krzesło ${seated().seat_index + 1}`

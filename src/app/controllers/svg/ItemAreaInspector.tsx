@@ -1,17 +1,17 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { cloneSvgItem, SvgItem, SvgItemIconProps } from "./SvgItem";
+import { cloneSvgItem, SvgItem, SvgItemAreaProps, SvgItemIconProps } from "./SvgItem";
 import { useI18nContext } from "@/app/context/I18nContext";
 import { InspectorCategory, InspectorCategoryContent, InspectorCategoryTitle, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
 import PropertyInput from "./PropertyInput";
 import { CopyIcon, EyeIcon, EyeOffIcon, Trash2Icon } from "lucide-solid";
 import { Match, Switch } from "solid-js";
 
-interface ItemIconInspectorProps {
-    item: SvgItem<SvgItemIconProps>;
+interface ItemAreaInspectorProps {
+    item: SvgItem<SvgItemAreaProps>;
 }
 
-export default function ItemIconInspector(
-    props: ItemIconInspectorProps
+export default function ItemAreaInspector(
+    props: ItemAreaInspectorProps
 ) {
     const i18n = useI18nContext();
     const context = useSvgDrawerContext();
@@ -43,18 +43,10 @@ export default function ItemIconInspector(
                         <PropertyInput
                             title="prop_name"
                             type="string"
-                            placeholder="Np. Wentlacja, Mikrofon..."
+                            placeholder="Np. Sala weselna, Teren, Parkiet taneczny..."
                             value={[
-                                props.item.props.label,
-                                value => context.modifyItem(props.item.id, { props: { label: value }})
-                            ]}
-                        />
-                        <PropertyInput
-                            title="Ikona"
-                            type="icon"
-                            value={[
-                                props.item.props.icon,
-                                value => context.modifyItem(props.item.id, { props: { icon: value }})
+                                props.item.props.name,
+                                value => context.modifyItem(props.item.id, { props: { name: value }})
                             ]}
                         />
                     </InspectorCategoryContent>
@@ -64,33 +56,20 @@ export default function ItemIconInspector(
                         Wymiary
                     </InspectorCategoryTitle>
                     <InspectorCategoryContent>
-                        {/*<div class="grid grid-cols-2 gap-3">
-                            <PropertyInput
-                                title="prop_x"
-                                type="number"
-                                value={[props.item.x, (value) => context.modifyItem(props.item.id, { x: value }) ]}
-                            />
-                            <PropertyInput
-                                title="prop_y"
-                                type="number"
-                                value={[props.item.y, (value) => context.modifyItem(props.item.id, { y: value }) ]}
-                            />
-                        </div>*/}
 
                         <PropertyInput 
-                                title="prop_width"
-                                type="number"
-                                min={64}
-                                value={[props.item.w, (value) => context.modifyItem(props.item.id, { w: value }) ]}
-                            />
-                        
-                        <PropertyInput 
-                            title="prop_angle"
+                            title="Szerokość (m)"
                             type="number"
-                            is_int={true}
-                            value={[props.item.angle, (value) => context.modifyItem(props.item.id, { angle: value }) ]}
+                            min={1}
+                            value={[props.item.w / 100, (value) => context.modifyItem(props.item.id, { w: value * 100 }) ]}
                         />
-                        
+
+                        <PropertyInput 
+                            title="Wysokość (m)"
+                            type="number"
+                            min={1}
+                            value={[props.item.h / 100, (value) => context.modifyItem(props.item.id, { h: value * 100 }) ]}
+                        />
                     </InspectorCategoryContent>
                 </InspectorCategory>
             </InspectorContent>
@@ -102,11 +81,11 @@ export default function ItemIconInspector(
                     <Switch>
                         <Match when={props.item.position_locked}>
                             <EyeOffIcon stroke-width={1.5} height={20} width="auto" />
-                            <p>Odblokuj ikonę</p>
+                            <p>Odblokuj salę</p>
                         </Match>
                         <Match when={!props.item.position_locked}>
                             <EyeIcon stroke-width={1.5} height={20} width="auto" />
-                            <p>Zablokuj ikonę</p>
+                            <p>Zablokuj salę</p>
                         </Match>
                     </Switch>
                 </button>
@@ -115,14 +94,14 @@ export default function ItemIconInspector(
                     on:click={() => onDuplicateItem()}
                 >
                     <CopyIcon stroke-width={1.5} height={20} width="auto" />
-                    <p>Duplikuj</p>
+                    <p>Duplikuj salę</p>
                 </button>
                 <button 
                     class="bg-primary-soft py-2 rounded-sm text-sm text-error border border-border flex items-center justify-center gap-2 cursor-pointer"
                     on:click={() => onDeleteItem()}
                 >
                     <Trash2Icon stroke-width={1.5} height={20} width="auto" />
-                    <p>Usuń</p>
+                    <p>Usuń salę</p>
                 </button>
             </div>
         </>

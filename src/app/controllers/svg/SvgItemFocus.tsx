@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowRightIcon, RotateCw } from "lucide-solid";
-import { isSvgItemTableCircle, SvgItemType, type SvgItem } from "./SvgItem";
+import { SEAT_RADIUS, SvgItemType } from "./SvgItem";
 import { createMemo, Match, Show, Switch } from "solid-js";
-import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { FocusedItem, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 
 interface PaddingType {
     l: number,
@@ -11,7 +11,7 @@ interface PaddingType {
 }
 
 interface SvgItemInspectorComponentProps {
-    item: SvgItem
+    item: FocusedItem;
     padding?: PaddingType
 }
 
@@ -20,10 +20,17 @@ export function SvgItemFocus(
 ) {
     const context = useSvgDrawerContext();
 
+    const item = createMemo(() => context.items[props.item.id]!);
+    const seat = createMemo(() => {
+        if(!isSeat(props.item)) return null;
+
+        return context.items[props.item.id].props.seat_configs[props.item.props.inspectSeat];
+    })
+
     const x = createMemo(() => 0);
     const y = createMemo(() => 0);
-    const width = createMemo(() => props.item.w);
-    const height = createMemo(() => props.item.h);
+    const width = createMemo(() => item().w);
+    const height = createMemo(() => item().h);
 
     function onResizeHandlePointerDown(e: PointerEvent) {
         const target = e.target as SVGCircleElement;
@@ -39,40 +46,56 @@ export function SvgItemFocus(
 
         e.stopPropagation();
 
-        const worldX = e.clientX - context.clientWidth() / 2 - context.panX();
-        const worldY = e.clientY - context.clientHeight() / 2 - context.panY();
-
         const zoom = context.zoom();
-
-        const px = worldX / zoom;
-        const py = worldY / zoom;
-
-        const dx = px - props.item.x;
-        const dy = py - props.item.y;
+        const mouseWorldX = (e.clientX - context.clientWidth() / 2 - context.panX()) / zoom;
+        const mouseWorldY = (e.clientY - context.clientHeight() / 2 - context.panY()) / zoom;
 
         // undo rotation
-        const angle = -props.item.angle * Math.PI / 180;
+        const angle = -item().angle * Math.PI / 180;
         const cos = Math.cos(angle);
         const sin = Math.sin(angle);
 
-        const localX = dx * cos - dy * sin;
-        const localY = dx * sin + dy * cos;
-
-        let newW = props.item.w;
-        let newH = props.item.h;
+        let w = item().w;
+        let h = item().h;
+        let x = item().x;
+        let y = item().y;
 
         if (type === "W") {
-            newW = Math.max(1, Math.floor(Math.abs(localX) * 2));
+            const leftWorldX = x - w / 2 * cos;
+            const leftWorldY = y + w / 2 * sin;
+
+            const deltaX = mouseWorldX - leftWorldX;
+            const deltaY = mouseWorldY - leftWorldY;
+
+            w = Math.max(1, Math.floor(deltaX * cos - deltaY * sin));
+
+            const deltaW = w - item().w;
+            
+            x += deltaW / 2 * cos;
+            y -= deltaW / 2 * sin;
         }
 
         if (type === "H") {
-            newH = Math.max(1, Math.floor(Math.abs(localY) * 2));
+            const topWorldX = x - h / 2 * sin;
+            const topWorldY = y - h / 2 * cos;
+
+            const deltaX = mouseWorldX - topWorldX;
+            const deltaY = mouseWorldY - topWorldY;
+
+            h = Math.max(1, Math.floor(deltaX * sin + deltaY * cos));
+
+            const deltaH = h - item().h;
+            
+            x += deltaH / 2 * sin;
+            y += deltaH / 2 * cos;
         }
 
-        if (newW !== props.item.w || newH !== props.item.h) {
+        if (w !== item().w || h !== item().h || x !== item().x || y !== item().y) {
             context.modifyItem(props.item.id, {
-                w: newW,
-                h: newH
+                w: w,
+                h: h,
+                x: x,
+                y: y
             });
         }
     }
@@ -98,19 +121,15 @@ export function SvgItemFocus(
 
         e.stopPropagation();
 
-        const worldX = e.clientX - context.clientWidth() / 2 - context.panX();
-        const worldY = e.clientY - context.clientHeight() / 2 - context.panY();
-
         const zoom = context.zoom();
+        const mouseWorldX = (e.clientX - context.clientWidth() / 2 - context.panX()) / zoom;
+        const mouseWorldY = (e.clientY - context.clientHeight() / 2 - context.panY()) / zoom;
 
-        const px = worldX / zoom;
-        const py = worldY / zoom;
-
-        const dx = px - props.item.x;
-        const dy = py - props.item.y;
+        const dx = mouseWorldX - item().x;
+        const dy = mouseWorldY - item().y;
 
         const angle = Math.floor(Math.atan2(dy, dx) * 180 / Math.PI + offsetAngle);
-        if(angle != props.item.angle) {
+        if(angle != item().angle) {
             context.modifyItem(props.item.id, {
                 angle: angle
             })
@@ -158,12 +177,9 @@ export function SvgItemFocus(
         props2: { x: number, y: number }
     ) => {
         
-        const dx = props2.x - props.item.w / 2;
-        const dy = props2.y + props.item.h / 2;
-        const offsetAngle = Math.atan2(dy, dx) * 180 / Math.PI
-
-        console.log(`D ${dx} ${dy}`)
-        console.log(`Angle ${offsetAngle}`)
+        const dx = createMemo(() => props2.x - item().w / 2);
+        const dy = createMemo(() => props2.y + item().h / 2);
+        const offsetAngle = createMemo(() => Math.atan2(dy(), dx()) * 180 / Math.PI);
 
         return (
             <>
@@ -176,7 +192,7 @@ export function SvgItemFocus(
                     stroke-width="2"
                     style={{ cursor: "pointer" }}
                     on:pointerdown={onRotateHandlePointerDown}
-                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle)}
+                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle())}
                     on:pointerup={onRotateHandlePointerUp}
                 />
                 <circle 
@@ -186,29 +202,38 @@ export function SvgItemFocus(
                     fill="var(--color-white)"
                     style={{ cursor: "pointer" }}
                     on:pointerdown={onRotateHandlePointerDown}
-                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle)}
+                    on:pointermove={(e) => onRotateHandlePointerMove(e, offsetAngle())}
                     on:pointerup={onRotateHandlePointerUp}
                 />
             </>
         );
     }
 
+    function isTable(item: FocusedItem) {
+        return context.items[item.id]?.kind === SvgItemType.TABLE_U
+            || context.items[item.id]?.kind === SvgItemType.TABLE_T
+            || context.items[item.id]?.kind === SvgItemType.TABLE_RECT
+            || context.items[item.id]?.kind === SvgItemType.TABLE_CIRCLE;
+    }
+
+    function isSeat(item: FocusedItem) {
+        return isTable(item) && item.props?.inspectSeat !== undefined;
+    }
+
     return(
         <g
             transform={`
-                translate(${props.item.parent?.x || 0} ${props.item.parent?.y || 0})
-                translate(${props.item.x - props.item.w / 2} ${props.item.y - props.item.h / 2})
-                rotate(${props.item.angle} ${props.item.w / 2} ${props.item.h / 2})
-                rotate(${props.item.parent?.angle || 0} ${props.item.w / 2 - props.item.x} ${props.item.h / 2 - props.item.y})
+                translate(${item().x - item().w / 2} ${item().y - item().h / 2})
+                rotate(${item().angle} ${item().w / 2} ${item().h / 2})
             `}
             class="pointer-events-auto"
         >
             <Switch>
-                <Match when={props.item.kind == SvgItemType.TABLE_SEAT}>
+                <Match when={isSeat(props.item)}>
                     <circle
-                        cx={props.item.props.radius}
-                        cy={props.item.props.radius}
-                        r={props.item.props.radius * 1.2}
+                        cx={x() + seat().x}
+                        cy={y() + seat().y}
+                        r={SEAT_RADIUS * 1.2}
                         fill="none"
                         stroke="var(--color-accent)"
                         stroke-width="2"
@@ -223,11 +248,11 @@ export function SvgItemFocus(
                         />
                     </circle>
                 </Match>
-                <Match when={props.item.kind == SvgItemType.TABLE_CIRCLE}>
+                <Match when={item().kind == SvgItemType.TABLE_CIRCLE}>
                     <circle
-                        cx={props.item.w / 2}
-                        cy={props.item.w / 2}
-                        r={props.item.w / 2}
+                        cx={item().w / 2}
+                        cy={item().w / 2}
+                        r={item().w / 2}
                         fill="none"
                         stroke="var(--color-accent)"
                         stroke-width="2"
@@ -258,8 +283,8 @@ export function SvgItemFocus(
             </Switch>
             
 
-            <Show when={props.item.kind != SvgItemType.TABLE_SEAT}>
-                <Show when={props.item.kind != SvgItemType.TEXT}>
+            <Show when={!isSeat(props.item)}>
+                <Show when={item().kind != SvgItemType.TEXT}>
                     <ControlResizePoint 
                         x={x() + width()}
                         y={y() + height() / 2}
@@ -267,21 +292,21 @@ export function SvgItemFocus(
                     />
                 </Show>
 
-                <Show when={props.item.kind == SvgItemType.TABLE_CIRCLE}>
+                <Show when={item().kind == SvgItemType.TABLE_CIRCLE}>
                     <ControlRotatePoint
                         x={x() + width() / 2}
                         y={y()}
                     />
                 </Show>
 
-                <Show when={props.item.kind != SvgItemType.TABLE_CIRCLE}>
+                <Show when={item().kind != SvgItemType.TABLE_CIRCLE}>
                     <ControlRotatePoint
                         x={x()}
                         y={y()}
                     />
                 </Show>
 
-                <Show when={props.item.kind != SvgItemType.TABLE_CIRCLE && props.item.kind != SvgItemType.ICON && props.item.kind != SvgItemType.TEXT}>
+                <Show when={item().kind != SvgItemType.TABLE_CIRCLE && item().kind != SvgItemType.ICON && item().kind != SvgItemType.TEXT}>
                     <ControlResizePoint
                         x={x() + width() / 2}
                         y={y() + height()}

@@ -40,8 +40,6 @@ export default function PropertyDropdown(
 
     onMount(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            console.log("Clicked outside?", event.target);
-
             if(selectorRef && !selectorRef.contains(event.target as Node) && !dropdownRef?.contains(event.target as Node)) {
                 setMenuOpen(false);
             }

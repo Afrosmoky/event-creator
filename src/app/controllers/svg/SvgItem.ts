@@ -1,5 +1,3 @@
-import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-
 export type EnumLike = Record<string, string | number>;
 export type EnumValues<T extends EnumLike> = T[keyof T];
 
@@ -25,25 +23,30 @@ export type PropertiesDescriptor = {
     [key: string]: PropertyDescriptor
 };
 
-type ResolveDescriptorType<T> =
+type ResolveDescriptorType<T, IsArray = false> =
+    IsArray extends true ? ResolveDescriptorType<T>[] :
     T extends "string" ? string :
     T extends "number" ? number :
     T extends "bool" ? boolean :
     T extends "color" ? string :
     T extends "icon" ? string :
+    T extends PropertiesDescriptor ? PropsFromDescriptor<T> :
     T extends EnumLike ? EnumValues<T> :
     never;
 
 export type PropsFromDescriptor<
     T extends PropertiesDescriptor
 > = {
-    [P in keyof T]: ResolveDescriptorType<T[P]["type"]>;
+    [P in keyof T]: ResolveDescriptorType<T[P]["type"], T[P]["is_array"]>;
 };
 
 function createTypeProps<T extends PropertiesDescriptor>(def: T) {
     for(const key in def) {
         const descriptor = def[key];
-        if(descriptor.type === "number") {
+
+        if(descriptor.is_array) {
+            descriptor.default = descriptor.default ?? [] as any;
+        } else if(descriptor.type === "number") {
             descriptor.default = descriptor.default ?? 0;
         } else if(descriptor.type === "string") {
             descriptor.default = descriptor.default ?? "";
@@ -62,42 +65,19 @@ export interface SvgItemBlueprint<T extends PropertiesDescriptor = PropertiesDes
     props: T
 }
 
-export function createSvgItem<T extends PropertiesDescriptor>(
-    type: string,
-    props_definition: T
-) {
-    let props: any = {};
-    for(const key in props_definition) {
-        props[key] = props_definition[key].default;
-    }
-
-    const id = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-
-    const item: SvgItem<PropsFromDescriptor<T>> = {
-        id: id,
-        kind: type,
-        x: 0, y: 0,
-        w: 256, h: 256,
-        angle: 0,
-        props,
-        last_update: Date.now()
-    };
-
-    return item;
-}
-
 export function createSvgItemFromBlueprint<T extends PropertiesDescriptor>(
     blueprint: SvgItemBlueprint<T>
 ) {
     let props: any = {};
     for(const key in blueprint.props) {
-        props[key] = blueprint.props[key].default;
+        props[key] = deepCloneObj(blueprint.props[key].default);
     }
 
     const item: SvgItem<PropsFromDescriptor<T>> = {
-        id: -1,
+        id: null,
         kind: blueprint.type,
         x: 0, y: 0,
+        order: null,
         w: 256, h: 256,
         angle: 0,
         props,
@@ -110,15 +90,20 @@ export function createSvgItemFromBlueprint<T extends PropertiesDescriptor>(
 export function cloneSvgItem(original: SvgItem) {
     let copy = deepCloneObj(original);
 
-    copy.id = -1;
+    copy.id = null;
+    copy.order = null;
     copy.last_update = Date.now();
 
     return copy;
 }
 
-function deepCloneObj<T extends object>(obj: T): T {
+export function deepCloneObj<T extends any>(obj: T): T {
     if(typeof obj !== 'object') {
         return obj;
+    }
+
+    if(Array.isArray(obj)) {
+        return obj.map(o => deepCloneObj(o)) as any;
     }
 
     let copy: any = {};
@@ -147,9 +132,9 @@ export enum SvgItemType {
     TABLE_RECT = "TABLE_RECT",
     TABLE_T = "TABLE_T",
     TABLE_U = "TABLE_U",
-    TABLE_SEAT = "TABLE_SEAT",
     ICON = "ICON",
-    TEXT = "TEXT"
+    TEXT = "TEXT",
+    AREA = "AREA"
 }
 
 export interface SvgItem<Props = Record<string, any>> {
@@ -161,6 +146,9 @@ export interface SvgItem<Props = Record<string, any>> {
 
     x: number;
     y: number;
+
+    order?: string;
+
     w: number;
     h: number;
 
@@ -180,6 +168,35 @@ export enum SvgItemTableSeatFacing {
     TABLE = 0,
     USER = 1
 }
+
+export const MIN_SEAT_SPACING = 42;
+export const MAX_SEAT_SPACING = 180;
+export const SEAT_RADIUS = 20;
+
+export const TableSeatConfigDef = createTypeProps({
+    x: {
+        type: "number",
+        name: "x",
+        default: 0
+    },
+    y: {
+        type: "number",
+        name: "y",
+        default: 0
+    },
+    radius: {
+        type: "number",
+        name: "radius",
+        default: SEAT_RADIUS
+    },
+    angle: {
+        type: "number",
+        name: "angle",
+        default: 0
+    }
+});
+
+export type TableSeatConfigProps = PropsFromDescriptor<typeof TableSeatConfigDef>;
 
 export const SvgItemTablePropsDef = createTypeProps({
     "name": {
@@ -258,6 +275,11 @@ export const SvgItemTablePropsDef = createTypeProps({
         type: SvgItemTableSeatFacing,
         name: "prop_seat_orientation",
         default: SvgItemTableSeatFacing.TABLE
+    },
+    "seat_configs": {
+        type: TableSeatConfigDef,
+        name: "prop_seat_configs",
+        is_array: true,
     }
 });
 
@@ -270,36 +292,6 @@ export function isSvgItemTable(item: SvgItem<any> | string): item is SvgItem<Svg
         return item.kind.startsWith("TABLE_");
     }
 }
-
-export const SvgItemTableSeatPropsDef = createTypeProps({
-    "guest_id": {
-        type: "string",
-        name: "guest_id",
-        default: null
-    },
-    "index": {
-        type: "number",
-        name: "index",
-        default: 0
-    },
-    "radius": {
-        type: "number",
-        name: "radius",
-        default: 21
-    },
-    "table_angle": {
-        type: "number",
-        name: "table_angle",
-        default: 0
-    }
-});
-
-export type SvgItemTableSeatProps = PropsFromDescriptor<typeof SvgItemTableSeatPropsDef>;
-
-export function isSvgItemTableSeat(item: SvgItem<any>): item is SvgItem<SvgItemTableSeatProps> {
-    return item.kind == SvgItemType.TABLE_SEAT;
-}
-
 
 export function isSvgItemTableRect(item: SvgItem<SvgItemTableProps>) {
     return item.kind === "TABLE_RECT";
@@ -342,10 +334,6 @@ export const SvgItemTableUPropsDef = createTypeProps({
         min: 32
     }
 });
-
-export const MIN_SEAT_SPACING = 42;
-export const MAX_SEAT_SPACING = 180;
-export const SEAT_RADIUS = 20;
 
 export function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
@@ -426,6 +414,20 @@ export function isSvgItemText(item: SvgItem<any>): item is SvgItem<SvgItemTextPr
     return item.kind === "TEXT";
 }
 
+export const SvgItemAreaPropsDef = createTypeProps({
+    "name": {
+        type: "string",
+        name: "prop_name",
+        default: ""
+    },
+});
+
+export type SvgItemAreaProps = PropsFromDescriptor<typeof SvgItemAreaPropsDef>;
+
+export function isSvgItemArea(item: SvgItem<any>): item is SvgItem<SvgItemAreaProps> {
+    return item.kind === "AREA";
+}
+
 export const SvgItems = {
     TABLE_RECT: {
         type: "TABLE_RECT",
@@ -441,11 +443,7 @@ export const SvgItems = {
     },
     TABLE_CIRCLE: {
         type: "TABLE_CIRCLE",
-        props: SvgItemTablePropsDef
-    },
-    TABLE_SEAT: {
-        type: SvgItemType.TABLE_SEAT,
-        props: SvgItemTableSeatPropsDef,
+        props: SvgItemTableCirclePropsDef
     },
     ICON: {
         type: "ICON",
@@ -454,5 +452,9 @@ export const SvgItems = {
     TEXT: {
         type: "TEXT",
         props: SvgItemTextPropsDef
+    },
+    AREA: {
+        type: "AREA",
+        props: SvgItemAreaPropsDef
     }
 } as const satisfies { [key: string]: SvgItemBlueprint };

@@ -1,21 +1,22 @@
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
-import { SvgItem, SvgItemTableProps, SvgItemTableSeatProps, SvgItemType } from "./SvgItem";
+import { SvgItem, SvgItemTableProps, SvgItemType, TableSeatConfigProps } from "./SvgItem";
 import { batch, createEffect, createMemo, createSignal, Match, Show, Switch, untrack } from "solid-js";
 import { GuestDietIcon, GuestIcon } from "./GuestIcon";
 
-interface SvgItemTableSeatComponentProps {
-    item: SvgItem<SvgItemTableSeatProps>;
+interface TableSeatComponentProps {
+    parent: SvgItem<SvgItemTableProps>;
+    index: number;
 }
 
-export function SvgItemTableSeat(
-    props: SvgItemTableSeatComponentProps
+export function TableSeat(
+    props: TableSeatComponentProps
 ) {
     const baseNameTextSize = 10;
 
     const context = useSvgDrawerContext();
     const seatedGuest = createMemo(() => {
         for(const seated of context.seats) {
-            if(seated.table_id === props.item.parent?.id && seated.seat_index === props.item.props.index) {
+            if(seated.table_id === props.parent.id && seated.seat_index === props.index) {
                 return context.guests.find(o => o.id === seated.guest_id);
             }
         }
@@ -23,26 +24,41 @@ export function SvgItemTableSeat(
         return null;
     });
 
-    const parentTable = createMemo(() => context.items[props.item.parent?.id]);
-    const item = props.item;
+    const parent = createMemo(() => props.parent);
+    const config = createMemo(() => props.parent.props.seat_configs[props.index]);
 
     const [isHover, setIsHover] = createSignal(false);
 
     function onContentClick(event: PointerEvent) {
         event.stopPropagation();
 
-        context.setFocusedItemIndex(props.item.id);
+        context.setFocusedItem({
+            id: props.parent.id,
+            props: {
+                inspectSeat: props.index,
+            }
+        });
     }
 
     function onPointerUp(event: PointerEvent) {
         const guest = context.guests.find(o => o.id === context.draggingGuest());
         if(guest) {
-            context.seatGuest(guest.id, props.item.parent.id, props.item.props.index);
+            if(!props.parent.props.name) {
+                alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
+                return;
+            }
+
+            context.seatGuest(guest.id, props.parent.id, props.index);
             return;
         }
 
         const group = context.draggingGroup();
         if(!group) {
+            return;
+        }
+
+        if(!props.parent.props.name) {
+            alert("Stolik, do którego próbujesz przypisać uczestnika, nie jest opisany. Nadaj mu nazwę i spróbuj ponownie.");
             return;
         }
 
@@ -52,7 +68,7 @@ export function SvgItemTableSeat(
         }
 
         batch(() => {
-            const occupied = context.getTableSeats(props.item.parent.id);
+            const occupied = context.getTableSeats(props.parent.id);
             guests = guests.filter(guest => {
                 return !occupied.some(o => o.guest_id === guest.id);
             });
@@ -61,8 +77,8 @@ export function SvgItemTableSeat(
                 return;
             }
 
-            if(occupied.length + guests.length > props.item.parent.props.seats) {
-                alert(`Nie można usadzić wszystkich gości przy tym stole! Potrzebnych miejsc: ${occupied.length + guests.length}, dostępnych miejsc: ${props.item.parent.props.seats}`);
+            if(occupied.length + guests.length > props.parent.props.seats) {
+                alert(`Nie można usadzić wszystkich gości przy tym stole! Potrzebnych miejsc: ${occupied.length + guests.length}, dostępnych miejsc: ${props.parent.props.seats}`);
                 return;
             }
 
@@ -73,7 +89,7 @@ export function SvgItemTableSeat(
                 if(!isOccupied) {
                     const guest = guests.shift();
                     if(guest) {
-                        context.seatGuest(guest.id, props.item.parent.id, seatIndex);
+                        context.seatGuest(guest.id, props.parent.id, seatIndex);
                     }
                 }
 
@@ -124,7 +140,8 @@ export function SvgItemTableSeat(
                         id={pathId()}
                         fill="none"
                         stroke="red"
-                        d={`M 0, ${-yOffset()} a ${item.props.radius * 2} ${item.props.radius * 2} 0 0 1 ${item.props.radius * 2} 0`}
+
+                        d={`M 0, ${-yOffset()} a ${config().radius * 2} ${config().radius * 2} 0 0 1 ${config().radius * 2} 0`}
                     />
                 </defs>
 
@@ -180,9 +197,9 @@ export function SvgItemTableSeat(
         const [finalSize, setFinalSize] = createSignal(props.size);
 
         const anchor = createMemo(() => {
-            let angle = item.props.table_angle;
+            let angle = config().angle;
 
-            if(parentTable().kind == SvgItemType.TABLE_CIRCLE) {
+            if(parent().kind == SvgItemType.TABLE_CIRCLE) {
                 if(angle <= 90 || angle >= 270) {
                     return "start";
                 } else {
@@ -198,10 +215,10 @@ export function SvgItemTableSeat(
         })
 
         const dirX = createMemo(() => {
-            return Math.cos((item.props.table_angle) * (Math.PI / 180));
+            return Math.cos((config().angle) * (Math.PI / 180));
         });
         const dirY = createMemo(() => {
-            return Math.sin((item.props.table_angle) * (Math.PI / 180));
+            return Math.sin((config().angle) * (Math.PI / 180));
         });
 
         createEffect(() => {
@@ -219,26 +236,26 @@ export function SvgItemTableSeat(
         }
 
         const length = createMemo(() => {
-            if(parentTable().kind == SvgItemType.TABLE_CIRCLE) {
-                return (item.props.radius + 4);
+            if(parent().kind == SvgItemType.TABLE_CIRCLE) {
+                return (config().radius + 4);
             } else {
-                return (item.props.radius + 4);
+                return (config().radius + 4);
             }
         });
 
         const x = createMemo(() => {
-            return item.props.radius + dirX() * length();
+            return config().radius + dirX() * length();
         });
 
         const y = createMemo(() => {
-            return item.props.radius - dirY() * length();
+            return config().radius - dirY() * length();
         });
 
         return (
             
                 <Switch>
-                    <Match when={item.parent?.props.seat_facing === 0}>
-                        <g ref={contentDOM} transform={constructRotateTransform(-item.props.table_angle + 90)}>
+                    <Match when={parent().props.seat_facing === 0}>
+                        <g ref={contentDOM} transform={constructRotateTransform(-config().angle + 90)}>
                             <ArcText
                                 text={props.name}
                                 size={finalSize()}
@@ -255,12 +272,12 @@ export function SvgItemTableSeat(
                     </Match>
                     <Match when={true}>
                         <g ref={contentDOM} transform={
-                            parentTable().kind != SvgItemType.TABLE_CIRCLE
-                            ? constructRotateTransform(-item.props.table_angle % 180, x(), y())
+                            parent().kind != SvgItemType.TABLE_CIRCLE
+                            ? constructRotateTransform(-config().angle % 180, x(), y())
                             : constructRotateTransform(-(
-                                item.props.table_angle <= 90 || item.props.table_angle >= 270
-                                ? item.props.table_angle
-                                : (item.props.table_angle + 180) % 360
+                                config().angle <= 90 || config().angle >= 270
+                                ? config().angle
+                                : (config().angle + 180) % 360
                             ), x(), y())
                         }>
                             <RegularText
@@ -284,32 +301,30 @@ export function SvgItemTableSeat(
     }
 
     const SeatedIndicator = () => {
-        const seat_facing = createMemo(() => parentTable().props.seat_facing);
+        const seat_facing = createMemo(() => parent().props.seat_facing);
 
         return (
             <>
                 <circle
-                    cx={props.item.props.radius}
-                    cy={props.item.props.radius}
-                    r={props.item.props.radius}
+                    cx={0}
+                    cy={0}
+                    r={config().radius}
                     fill-opacity="0"
                 />
 
                 <g transform={constructRotateTransform(
-                    seat_facing() === 0 ? -props.item.props.table_angle + 90 : -parentTable().angle
+                    seat_facing() === 0 ? -config().angle + 90 : 0
                 )}>
-                    <GuestIcon guest={seatedGuest()} radius={props.item.props.radius} />
+                    <GuestIcon guest={seatedGuest()} radius={config().radius} />
+                    {context.showDietaryIcons() && (
+                        <GuestDietIcon 
+                            guest={seatedGuest()} 
+                            radius={config().radius / 2}
+                            x={-config().radius / 2 + 2}
+                            y={0}
+                        />
+                    )}
                 </g>
-                
-                
-                {context.showDietaryIcons() && (
-                    <GuestDietIcon 
-                        guest={seatedGuest()} 
-                        radius={props.item.props.radius / 2} 
-                        x={-props.item.props.radius / 2 + 2}
-                        y={0}
-                    />
-                )}
 
                 <FullNameText
                     name={seatedGuest()?.name || ""}
@@ -324,9 +339,9 @@ export function SvgItemTableSeat(
         return (
             <>
                 <circle
-                    cx={props.item.props.radius}
-                    cy={props.item.props.radius}
-                    r={props.item.props.radius}
+                    cx={config().radius}
+                    cy={config().radius}
+                    r={config().radius}
                     fill="#FFFFFF"
                     fill-opacity="1"
                     stroke="black"
@@ -335,13 +350,13 @@ export function SvgItemTableSeat(
                     stroke-dasharray="4 2"
                 ></circle>
                 <text
-                    x={props.item.props.radius}
-                    y={props.item.props.radius + 4}
+                    x={config().radius}
+                    y={config().radius + 4}
                     font-size="12"
                     text-anchor="middle"
                     fill="#2E2A26"
                 >
-                    {(props.item.props.index + 1).toString()}
+                    {(props.index + 1).toString()}
                 </text>
             </>
         )
@@ -351,9 +366,9 @@ export function SvgItemTableSeat(
         return (
             <>
                 <circle 
-                    cx={props.item.props.radius}
-                    cy={props.item.props.radius}
-                    r={props.item.props.radius}
+                    cx={config().radius}
+                    cy={config().radius}
+                    r={config().radius}
 
                     stroke="#C6A96A"
                     stroke-width={4}
@@ -373,18 +388,15 @@ export function SvgItemTableSeat(
         )
     }
 
-    function constructRotateTransform(angle: number, cx: number = props.item.props.radius, cy: number = props.item.props.radius) {
+    function constructRotateTransform(angle: number, cx: number = config().radius, cy: number = config().radius) {
         return `rotate(${angle} ${cx} ${cy})`;
     }
     
     return (
         <Switch>
-            <Match when={parentTable().props.show_unseated || seatedGuest()}>
+            <Match when={parent().props.show_unseated || seatedGuest()}>
                 <g 
-                    transform={`
-                        translate(${props.item.parent?.x} ${props.item.parent?.y})
-                        rotate(${props.item.parent?.angle} ${-props.item.x + props.item.props.radius} ${-props.item.y + props.item.props.radius})
-                    `}
+                    transform={`translate(${config().x - config().radius} ${config().y - config().radius})`}
 
                     on:pointerdown={onContentClick}
                     on:pointerenter={() => setIsHover(true)}
@@ -405,15 +417,10 @@ export function SvgItemTableSeat(
                 </g>
             </Match>
             <Match when={true}>
-                <g 
-                    transform={`
-                        translate(${props.item.parent?.x} ${props.item.parent?.y})
-                        rotate(${props.item.parent?.angle} ${-props.item.x + props.item.props.radius} ${-props.item.y + props.item.props.radius})
-                    `}
-                >
+                <g>
                     <circle
-                        cx={props.item.props.radius}
-                        cy={props.item.props.radius}
+                        cx={config().x}
+                        cy={config().y}
                         r={4}
                         fill="#FAF1EF"
                         fill-opacity="0.8"

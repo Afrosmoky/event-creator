@@ -1,12 +1,13 @@
 import { createEffect, createMemo, Match, Show, Switch } from "solid-js";
 import { cloneSvgItem, isSvgItemText, SvgItem, SvgItemTableProps, SvgItemType } from "./SvgItem";
-import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { FocusedItem, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { Inspector, InspectorContent, InspectorHead, InspectorTitle } from "./InspectorPresets";
 import ItemTableInspector from "./ItemTableInspector";
 import { CopyIcon, Trash2Icon } from "lucide-solid";
 import ItemIconInspector from "./ItemIconInspector";
 import TableSeatInspector from "./TableSeatInspector";
 import ItemTextInspector from "./ItemTextInspector";
+import ItemAreaInspector from "./ItemAreaInspector";
 
 export default function DrawerInspector(
     props: unknown
@@ -14,30 +15,37 @@ export default function DrawerInspector(
     const context = useSvgDrawerContext();
 
     const focusedItem = createMemo(() => {
-        if(context.focusedItemIndex() == -1) {
-            return null;
-        }
+        const item = context.focusedItem();
+        if(!item) return null;
 
-        return context.items[context.focusedItemIndex()];
+        return item;
     });
 
     createEffect(() => {
         console.log(`Focused item: ${focusedItem()?.id ?? -1}`)
     })
 
-    function isTable(item: SvgItem): item is SvgItem<SvgItemTableProps> {
-        return item.kind == SvgItemType.TABLE_U
-            || item.kind == SvgItemType.TABLE_T
-            || item.kind == SvgItemType.TABLE_RECT
-            || item.kind == SvgItemType.TABLE_CIRCLE;
+    function isTable(item: FocusedItem) {
+        return context.items[item.id]?.kind === SvgItemType.TABLE_U
+            || context.items[item.id]?.kind === SvgItemType.TABLE_T
+            || context.items[item.id]?.kind === SvgItemType.TABLE_RECT
+            || context.items[item.id]?.kind === SvgItemType.TABLE_CIRCLE;
     }
 
-    function isIcon(item: SvgItem) {
-        return item.kind == SvgItemType.ICON;
+    function isArea(item: FocusedItem) {
+        return context.items[item.id]?.kind === SvgItemType.AREA;
     }
 
-    function isSeat(item: SvgItem) {
-        return item.kind == SvgItemType.TABLE_SEAT;
+    function isSeat(item: FocusedItem) {
+        return isTable(item) && item.props?.inspectSeat !== undefined;
+    }
+
+    function isIcon(item: FocusedItem) {
+        return context.items[item.id]?.kind === SvgItemType.ICON;
+    }
+
+    function isText(item: FocusedItem) {
+        return context.items[item.id]?.kind === SvgItemType.TEXT;
     }
 
     return (
@@ -46,35 +54,44 @@ export default function DrawerInspector(
                 <InspectorTitle>
                     <span>
                         {
+                            isSeat(focusedItem())
+                            ? `Krzesło ${(focusedItem().props?.inspectSeat ?? 0) + 1} ` : 
                             isTable(focusedItem()) 
                             ? "Stół " :
                             isIcon(focusedItem())
                             ? "Ikona " : 
-                            isSeat(focusedItem())
-                            ? "Krzesło " : 
-                            isSvgItemText(focusedItem())
+                            isText(focusedItem())
                             ? "Tekst " :
+                            isArea(focusedItem())
+                            ? "Sala " :
                             "Nieznany "
                         }
                     </span>
                     <span class="text-xs italic font-normal text-foreground-muted">
-                        #{focusedItem().id}
+                        {
+                            isSeat(focusedItem()) 
+                            ? `Stół #${focusedItem()?.id ?? ""}`
+                            : `#${focusedItem()?.id ?? ""}`
+                        }
                     </span>
                 </InspectorTitle>
             </InspectorHead>
             <InspectorContent>
                 <Switch>
+                    <Match when={isSeat(focusedItem())}>
+                        <TableSeatInspector table={context.items[focusedItem().id] as any} index={focusedItem().props?.inspectSeat} />
+                    </Match>
                     <Match when={isTable(focusedItem())}>
-                        <ItemTableInspector item={focusedItem() as any} />
+                        <ItemTableInspector item={context.items[focusedItem().id] as any} />
                     </Match>
                     <Match when={isIcon(focusedItem())}>
-                        <ItemIconInspector item={focusedItem() as any} />
+                        <ItemIconInspector item={context.items[focusedItem().id] as any} />
                     </Match>
-                    <Match when={isSeat(focusedItem())}>
-                        <TableSeatInspector item={focusedItem() as any} />
+                    <Match when={isText(focusedItem())}>
+                        <ItemTextInspector item={context.items[focusedItem().id] as any} />
                     </Match>
-                    <Match when={isSvgItemText(focusedItem())}>
-                        <ItemTextInspector item={focusedItem() as any} />
+                    <Match when={isArea(focusedItem())}>
+                        <ItemAreaInspector item={context.items[focusedItem().id] as any} />
                     </Match>
                 </Switch>
             </InspectorContent>

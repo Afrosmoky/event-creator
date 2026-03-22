@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from 'solid-js';
+import { batch, createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { SvgItemFactory } from './SvgItemFactory';
 import { createStore } from 'solid-js/store';
 import { useSvgDrawerContext } from '@/app/context/SvgDrawerContext';
@@ -11,9 +11,6 @@ export function SvgDrawer(
     const context = useSvgDrawerContext();
     
     let svgDOM: SVGSVGElement = null!;
-
-    let [cellX, setCellX] = createSignal(100);
-    let [cellY, setCellY] = createSignal(100);
 
     onMount(() => {
         context.setRootDOM(svgDOM);
@@ -33,18 +30,12 @@ export function SvgDrawer(
                 context.zoomToFit();
             }
         });
-
-        console.log("SvgDrawer mounted");
     });
 
     onCleanup(() => {
         if(context.rootDOM() === svgDOM) {
             context.setRootDOM(null);
         }
-    })
-
-    createEffect(() => {
-        console.log(`Zoom: ${context.zoom()}`)
     })
 
     let lastMouseX: number = 0;
@@ -60,7 +51,7 @@ export function SvgDrawer(
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         
-        context.setFocusedItemIndex(-1);
+        context.setFocusedItem(null);
     }
 
     function onPointerMove(e: PointerEvent) {
@@ -85,23 +76,25 @@ export function SvgDrawer(
     function onWheel(e: WheelEvent) {
         e.preventDefault();
 
+        const zoomSensitivity = 0.001;
+        
         const oldZoom = context.zoom();
-        context.setZoom(Math.max(0.1, context.zoom() - e.deltaY * 0.001));
-
-        const newZoom = context.zoom();
-
+        const newZoom = Math.max(0.1, oldZoom - e.deltaY * zoomSensitivity);
         const oldMouseX = (e.clientX - context.panX() - context.clientWidth() / 2) / oldZoom;
         const oldMouseY = (e.clientY - context.panY() - context.clientHeight() / 2) / oldZoom;
 
         const newMouseX = (e.clientX - context.panX() - context.clientWidth() / 2) / newZoom;
         const newMouseY = (e.clientY - context.panY() - context.clientHeight() / 2) / newZoom;
 
-        context.setPanX(context.panX() + (newMouseX - oldMouseX) * newZoom);
-        context.setPanY(context.panY() + (newMouseY - oldMouseY) * newZoom);
+        batch(() => {
+            context.setZoom(newZoom);
+            context.setPanX(context.panX() + (newMouseX - oldMouseX) * newZoom);
+            context.setPanY(context.panY() + (newMouseY - oldMouseY) * newZoom);
+        });
     }
 
-    const backgroundSizeX = createMemo(() => Math.floor(50 * context.zoom()));
-    const backgroundSizeY = createMemo(() => Math.floor(50 * context.zoom()));
+    const backgroundSizeX = createMemo(() => 100 * context.zoom());
+    const backgroundSizeY = createMemo(() => 100 * context.zoom());
 
     return (
         <div class="relative w-full h-full select-none cursor-move overflow-hidden">
@@ -114,10 +107,7 @@ export function SvgDrawer(
                 height="100%"
 
                 style={{
-                    "background-color": "white",
-                    "background-image": `radial-gradient(rgb(200 200 200 / ${Math.min(context.zoom() * 2, 1)}) ${Math.max(1.2 * context.zoom(), 1)}px, transparent 0)`,
-                    "background-size": `${backgroundSizeX()}px ${backgroundSizeY()}px`,
-                    "background-position": `${((context.panX() + context.clientWidth() / 2 + backgroundSizeX() / 2) % backgroundSizeX())}px ${((context.panY() + context.clientHeight() / 2 + backgroundSizeY() / 2) % backgroundSizeY())}px`,
+                    "background-color": "#ffffff"
                 }}
                 
                 on:wheel={onWheel}
@@ -143,36 +133,35 @@ export function SvgDrawer(
                 `} />
 
                 <defs>
-                    <pattern id="grid" width={cellX()} height={cellY()} patternUnits="userSpaceOnUse">
-                        <path d={`M ${cellX()} 0 L 0 0 0 ${cellY()}`} fill="none" stroke="#cccccc" stroke-width="1" />
+                    <pattern 
+                        id="background" 
+
+                        x={(context.panX() + context.clientWidth() / 2)} 
+                        y={(context.panY() + context.clientHeight() / 2)} 
+                        width={backgroundSizeX()} 
+                        height={backgroundSizeY()} 
+
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <circle 
+                            cx={backgroundSizeX() / 2} 
+                            cy={backgroundSizeY() / 2} 
+                            r={Math.max(3 * context.zoom(), 0.5)} 
+                            
+                            fill="#cccccc" 
+                        />
                     </pattern>
                 </defs>
 
+                <rect
+                    x="0"
+                    y="0"
+                    width={context.canvasWidth()}
+                    height={context.canvasHeight()}
+                    fill="url(#background)"
+                />
+
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
-                    <text y="-16">
-                        Sala o wymiarach {context.canvasWidth() / 100}x{context.canvasHeight() / 100} metrów
-                    </text>
-                    <rect 
-                        x="0"
-                        y="0"
-                        rx="8"
-                        ry="8"
-                        width={context.canvasWidth()}
-                        height={context.canvasHeight()}
-                        fill="#FAF9F7"
-                    />
-                    <rect
-                        id="canvas_frame"
-                        x="-2"
-                        y="-2"
-                        rx="8"
-                        ry="8"
-                        width={context.canvasWidth() + 4}
-                        height={context.canvasHeight() + 4}
-                        fill="url(#grid)"
-                        stroke="black"
-                        stroke-width="4"
-                    />
                     <For each={context.itemsArray}>
                         {item => {
                             return (
@@ -181,34 +170,17 @@ export function SvgDrawer(
                         }}
                     </For>
                 </g>
+
                 <SvgLogo />
             </svg>
 
             <svg class="absolute top-0 left-0 pointer-events-none" width="100%" height="100%">
                 <g transform={`translate(${context.panX() + context.clientWidth() / 2}, ${context.panY() + context.clientHeight() / 2}) scale(${context.zoom()})`}>
-                    <Show when={context.focusedItemIndex() != -1}>
-                        <SvgItemFocus item={context.items[context.focusedItemIndex()]!} />
-                        {/*<SvgItemBBox item={context.items[context.focusedItemIndex()]!} />*/}
+                    <Show when={!!context.focusedItem()}>
+                        <SvgItemFocus item={context.focusedItem()} />
                     </Show>
                 </g>
             </svg>
         </div>
-    );
-}
-
-function SvgItemBBox(props: { item: any }) {
-    const totalWidth = createMemo(() => props.item.w + (props.item.props?.seat_radius || 0) * 4 + 8 * 2);
-    const totalHeight = createMemo(() => props.item.h + (props.item.props?.seat_radius || 0) * 4 + 8 * 2);
-
-    return (
-        <rect
-            x={props.item.x - totalWidth() / 2}
-            y={props.item.y - totalHeight() / 2}
-            width={totalWidth()}
-            height={totalHeight()}
-            fill="none"
-            stroke="red"
-            stroke-width="1"
-        />
     );
 }

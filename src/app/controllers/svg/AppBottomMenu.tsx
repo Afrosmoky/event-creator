@@ -1,9 +1,9 @@
 import { useI18nContext } from "@/app/context/I18nContext";
 import { createSignal, For, onCleanup, onMount } from "solid-js";
-import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
+import { applyDiff, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { createPngBlobFromSvg, createSvgBlobFromSvg, openBlobInWindow, saveBlobToFile } from "@/app/utils/svg";
 import { DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, UsersRoundIcon } from "lucide-solid";
-import { createSvgItemFromBlueprint, SvgItems, type SvgItemBlueprint } from "./SvgItem";
+import { createSvgItemFromBlueprint, deepCloneObj, SvgItems, type SvgItemBlueprint } from "./SvgItem";
 import { SvgIcon } from "./SvgItemIcon";
 import API from "@/app/api/API";
 import PropertyInput from "./PropertyInput";
@@ -46,7 +46,7 @@ const config: SideMenuConfig = {
                     blueprint: SvgItems.ICON,
                     icon: "high-chair-sign",
                     overwrite: {
-                        icon: "high-chair-sign"
+                        props: { icon: "high-chair-sign" }
                     }
                 }
             ]
@@ -58,42 +58,42 @@ const config: SideMenuConfig = {
                     blueprint: SvgItems.ICON,
                     icon: "cake",
                     overwrite: {
-                        icon: "cake"
+                        props: { icon: "cake" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "dj-controller",
                     overwrite: {
-                        icon: "dj-controller"
+                        props: { icon: "dj-controller" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "firework",
                     overwrite: {
-                        icon: "firework"
+                        props: { icon: "firework" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "gifts",
                     overwrite: {
-                        icon: "gifts"
+                        props: { icon: "gifts" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "microphone",
                     overwrite: {
-                        icon: "microphone"
+                        props: { icon: "microphone" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "sound",
                     overwrite: {
-                        icon: "sound"
+                        props: { icon: "sound" }
                     }
                 }
             ]
@@ -105,91 +105,91 @@ const config: SideMenuConfig = {
                     blueprint: SvgItems.ICON,
                     icon: "air-conditioner",
                     overwrite: {
-                        icon: "air-conditioner"
+                        props: { icon: "air-conditioner" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "caution-sign",
                     overwrite: {
-                        icon: "caution-sign"
+                        props: { icon: "caution-sign" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "compass",
                     overwrite: {
-                        icon: "compass"
+                        props: { icon: "compass" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "dance-area",
                     overwrite: {
-                        icon: "dance-area"
+                        props: { icon: "dance-area" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "disability-sing",
                     overwrite: {
-                        icon: "disability-sing"
+                        props: { icon: "disability-sing" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "electrical-outlet",
                     overwrite: {
-                        icon: "electrical-outlet"
+                        props: { icon: "electrical-outlet" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "fan",
                     overwrite: {
-                        icon: "fan"
+                        props: { icon: "fan" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "heater",
                     overwrite: {
-                        icon: "heater"
+                        props: { icon: "heater" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "light",
                     overwrite: {
-                        icon: "light"
+                        props: { icon: "light" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "smoke",
                     overwrite: {
-                        icon: "smoke"
+                        props: { icon: "smoke" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "toilet-sign",
                     overwrite: {
-                        icon: "toilet-sign"
+                        props: { icon: "toilet-sign" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "tree",
                     overwrite: {
-                        icon: "tree"
+                        props: { icon: "tree" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "water",
                     overwrite: {
-                        icon: "water"
+                        props: { icon: "water" }
                     }
                 }
             ]
@@ -201,49 +201,49 @@ const config: SideMenuConfig = {
                     blueprint: SvgItems.ICON,
                     icon: "arrow",
                     overwrite: {
-                        icon: "arrow"
+                        props: { icon: "arrow" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "left door",
                     overwrite: {
-                        icon: "left door"
+                        props: { icon: "left door" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "pillar",
                     overwrite: {
-                        icon: "pillar"
+                        props: { icon: "pillar" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "right-door",
                     overwrite: {
-                        icon: "right-door"
+                        props: { icon: "right-door" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "stage",
                     overwrite: {
-                        icon: "stage"
+                        props: { icon: "stage" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "strainght-wall",
                     overwrite: {
-                        icon: "strainght-wall"
+                        props: { icon: "strainght-wall" }
                     }
                 },
                 {
                     blueprint: SvgItems.ICON,
                     icon: "target",
                     overwrite: {
-                        icon: "target"
+                        props: { icon: "target" }
                     }
                 }
             ]
@@ -364,42 +364,35 @@ export function AppBottomMenu(props: {
         setShowExportPicker(false);
     }
 
-    async function createSvgItemFromPicker(config: SideMenuItem) {
-        let item = createSvgItemFromBlueprint(config.blueprint);
-        for(const key in config.overwrite) {
-            if(!config.blueprint.props[key]) {
-                continue;
-            }
+    function createNewArea() {
+        createNewItem(SvgItems.AREA, {
+            w: 1000,
+            h: 1000
+        });
+    }
 
-            item.props[key] = config.overwrite[key];
+    function createNewItem(blueprint: SvgItemBlueprint, overwrite?: any) {
+        let item = createSvgItemFromBlueprint(blueprint);
+        if(overwrite) {
+            applyDiff(item, overwrite);
         }
 
         item.x = -canvas.panX() / canvas.zoom();
-		item.y = -canvas.panY() / canvas.zoom();
+        item.y = -canvas.panY() / canvas.zoom();
 
         item = canvas.addItem(undefined, item);
-		canvas.setFocusedItemIndex(item.id);
+        canvas.setFocusedItem({ id: item.id });
     }
 
     return (
         <div class="flex flex-col justify-end w-48 h-full gap-4 text-foreground bg-card">
             <div class="grow overflow-y-auto overscroll-none p-2 flex flex-col gap-4 no-scrollbar">
-                <h3 class="uppercase text-sm font-semibold text-foreground border-b border-dashed border-border">
-                    Wymiary sali
-                </h3>
-                <PropertyInput
-                    title="Szerokość (m)"
-                    type="number"
-                    min={1}
-                    value={[canvas.canvasWidth() / 100, (value) => canvas.modifyCanvasSize(value * 100, canvas.canvasHeight()) ]}
-                />
-                <PropertyInput
-                    title="Wysokość (m)"
-                    type="number"
-                    min={1}
-                    value={[canvas.canvasHeight() / 100, (value) => canvas.modifyCanvasSize(canvas.canvasWidth(), value * 100)]}
-                />
-                <div class="h-0.5"></div>
+                <button 
+                    class="p-3 rounded-md bg-background border border-border flex justify-center cursor-pointer"
+                    on:click={() => createNewArea()}
+                >
+                    <p class="text-sm">Stwórz nową salę</p>
+                </button>
                 <For each={config.groups}>
                     {group => (
                         <>
@@ -411,7 +404,7 @@ export function AppBottomMenu(props: {
                                     {item => (
                                         <button 
                                             class="p-4 rounded-md bg-background border border-border flex justify-center cursor-pointer"
-                                            on:click={() => createSvgItemFromPicker(item)}
+                                            on:click={() => createNewItem(item.blueprint, item.overwrite)}
                                         >
                                             <SvgIcon icon={item.icon} width={32} height={32} />
                                         </button>

@@ -28,8 +28,17 @@ export function App() {
 
 	const draggingGuestObj = createMemo(() => canvas.guests.find(o => o.id == canvas.draggingGuest()));
 
+	let firstPoll = true;
+
+	function handlePollFinished() {
+		if(!firstPoll) return;
+
+		firstPoll = false;
+		canvas.zoomToFit();
+	}
+
 	if(!DEV) {
-		createItemController(ballroomId, canvas);
+		createItemController(ballroomId, canvas, handlePollFinished);
 		createSeatController(ballroomId, canvas);
 		createConfigController(ballroomId, canvas);
 

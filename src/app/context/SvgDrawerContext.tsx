@@ -1,6 +1,7 @@
 import { batch, createContext, createEffect, createResource, createSignal, onCleanup, onMount, useContext } from "solid-js";
 import type { SvgItem } from "../controllers/svg/SvgItem";
 import { createStore, produce, unwrap } from "solid-js/store";
+import { generateKeyBetween } from "fractional-indexing";
 
 export type SvgDrawerContextType = ReturnType<typeof makeSvgDrawerContext>;
 
@@ -288,7 +289,17 @@ export function getItemDiff<T extends Record<string, any>>(self: T, other: T): D
 
 export function applyDiff<T extends Record<string, any>>(self: any, diff: T) {
     for(const key in diff) {
-        if(diff[key] && typeof diff[key] == 'object') {
+        if(diff[key] && Array.isArray(diff[key])) {
+            if(!self[key] || !Array.isArray(self[key])) {
+                self[key] = [];
+            }
+
+            if(self[key].length != diff[key].length) {
+                self[key].length = diff[key].length;
+            }
+
+            applyDiff(self[key], diff[key]);
+        } else if(diff[key] && typeof diff[key] == 'object') {
             if(!self[key] || typeof self[key] != 'object') {
                 self[key] = {};
             }
@@ -306,7 +317,19 @@ export function clear_same<T extends Record<string, any>>(self: T, other: T) {
             continue;
         }
 
-        if(typeof self[key] === 'object' && typeof other[key] === 'object') {
+        if(Array.isArray(self[key])) {
+            if(!Array.isArray(other[key])) {
+                continue;
+            }
+
+            for(let i = 0; i < self[key].length; ++i) {
+                if(i >= other[key].length) {
+                    break;
+                }
+
+                clear_same(self[key][i], other[key][i]);
+            }
+        } else if(typeof self[key] === 'object' && typeof other[key] === 'object') {
             clear_same(self[key], other[key]);
 
             if(Object.keys(self[key]).length === 0) {
@@ -323,11 +346,15 @@ export function clear_same<T extends Record<string, any>>(self: T, other: T) {
 let seat_nonce = 0;
 let item_nonce = 0;
 
+export interface FocusedItem {
+    id: number;
+    props?: any;
+}
+
 export const makeSvgDrawerContext = () => {
     const [items, setItems] = createStore<{ [id: string]: SvgItem | undefined }>({});
     const [itemsArray, setItemsArray] = createStore<SvgItem[]>([]);
-    const [focusedItemIndex, setFocusedItemIndex] = createSignal<number>(-1);
-    const [focusedSeatIndex, setFocusedSeatIndex] = createSignal<number>(-1);
+    const [focusedItem, setFocusedItem] = createSignal<FocusedItem>(null);
     const [zoom, setZoom] = createSignal<number>(0.25);
     const [panX, setPanX] = createSignal(0);
     const [panY, setPanY] = createSignal(0);
@@ -349,6 +376,25 @@ export const makeSvgDrawerContext = () => {
     const [configPatches, setConfigPatches] = createStore<ConfigPatch[]>([]);
     
     const removed_ids: Map<number, boolean> = new Map();
+
+    function bringToFront(id: number) {
+        const item = items[id];
+        if(!item) {
+            return;
+        }
+
+        const layers = constructLayers(itemsArray);
+
+        const itemLayer = item.kind === "AREA" ? layers.AREA : layers.NORMAL;
+        if(itemLayer[itemsArray.length - 1]?.id === id) {
+            return;
+        }
+
+        const maxOrder = itemLayer.length > 0 ? itemLayer[itemLayer.length - 1].order : null;
+        const newOrder = generateKeyBetween(maxOrder, null);
+
+        modifyItem(id, { order: newOrder });
+    }
 
     function clearPatches() {
         setPatches(prev => []);
@@ -403,17 +449,62 @@ export const makeSvgDrawerContext = () => {
     }
 
     function zoomToFit(padding = 150) {
-        const contentWidth = canvasWidth() + padding * 2;
-        const contentHeight = canvasHeight() + padding * 2;
+        const bounds = calculateBounds();
 
-        const zoomX = clientWidth() / contentWidth;
-        const zoomY = clientHeight() / contentHeight;
+        const width = (bounds.maxX - bounds.minX) + padding * 2;
+        const height = (bounds.maxY - bounds.minY) + padding * 2;
 
-        const newZoom = Math.min(zoomX, zoomY);
+        const centerX = (bounds.minX + bounds.maxX) / 2;
+        const centerY = (bounds.minY + bounds.maxY) / 2;
+
+        const zoomX = clientWidth() / width;
+        const zoomY = clientHeight() / height;
+
+        const newZoom = Math.max(0.1, Math.min(0.75, Math.min(zoomX, zoomY)));
         setZoom(newZoom);
 
-        setPanX(-canvasWidth() / 2 * newZoom);
-        setPanY(-canvasHeight() / 2 * newZoom);
+        setPanX(-centerX * newZoom);
+        setPanY(-centerY * newZoom);
+    }
+
+    function calculateBounds() {
+        if(itemsArray.length === 0) {
+            return {
+                minX: 0,
+                minY: 0,
+                maxX: 0,
+                maxY: 0
+            };
+        }
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for(const item of itemsArray) {
+            if(removed_ids.get(item.id)) {
+                continue;
+            }
+
+            const leftX = item.x - item.w / 2;
+            const rightX = item.x + item.w / 2;
+
+            const topY = item.y - item.h / 2;
+            const bottomY = item.y + item.h / 2;
+
+            if(leftX < minX) minX = leftX;
+            if(rightX > maxX) maxX = rightX;
+            if(topY < minY) minY = topY;
+            if(bottomY > maxY) maxY = bottomY;
+        }
+
+        return {
+            minX,
+            minY,
+            maxX,
+            maxY
+        };
     }
 
     function addItem(id: number, item: SvgItem, emitPatch = true) {
@@ -459,15 +550,15 @@ export const makeSvgDrawerContext = () => {
         let refocus = false;
 
         batch(() => {
-            if(focusedItemIndex() === oldId) {
-                setFocusedItemIndex(-1);
+            if(focusedItem()?.id === oldId) {
+                setFocusedItem(null);
                 refocus = true;
             }
 
             setItems(oldId, "id", newId);
             setItems(newId, items[oldId]);
             setItems(oldId, undefined);
-            refocus && setFocusedItemIndex(newId);
+            refocus && setFocusedItem({ id: newId })
         });
     }
 
@@ -500,14 +591,18 @@ export const makeSvgDrawerContext = () => {
 
     function applyPatch(patch: Patch) {
         if(patch.type === 'add') {
-            setItemsArray(itemsArray.length, patch.item);
+            if(patch.item.order) {
+                setItemsArray(sortItems([...itemsArray, patch.item]));
+            } else {
+                setItemsArray(addItemToFront(patch.item, itemsArray));
+            }
+
             setItems(patch.id, patch.item);
         } else if(patch.type === 'del') {
             removed_ids.set(patch.id, true);
 
-            if(focusedItemIndex() === patch.id) {
-                setFocusedItemIndex(-1);
-                setFocusedSeatIndex(-1);
+            if(focusedItem()?.id === patch.id) {
+                setFocusedItem(null);
             }
 
             const arrayIndex = itemsArray.findIndex(o => o.id == patch.id);
@@ -520,7 +615,51 @@ export const makeSvgDrawerContext = () => {
                 applyDiff(item, patch.value);
                 return item;
             }));
+
+            if(patch.value.order) {
+                console.log(`Updating order of item ${patch.id} to ${patch.value.order}`);
+                setItemsArray(sortItems(itemsArray));
+            }
         }
+    }
+
+    function constructLayers(items: SvgItem[]) {
+        const layers: { ["AREA"]: SvgItem[], ["NORMAL"]: SvgItem[] } = {
+            ["AREA"]: [],
+            ["NORMAL"]: []
+        }
+        
+        for(const item of items) {
+            if(item.kind === "AREA") {
+                layers.AREA.push(item);
+            } else {
+                layers.NORMAL.push(item);
+            }
+        }
+
+        return layers;
+    }
+
+    function addItemToFront(item: SvgItem, items: SvgItem[]) {
+        const layers = constructLayers(items);
+
+        const itemLayer = item.kind === "AREA" ? layers.AREA : layers.NORMAL;
+        const maxOrder = itemLayer.length > 0 ? itemLayer[itemLayer.length - 1].order : null;
+        const newOrder = generateKeyBetween(maxOrder, null);
+
+        item.order = newOrder;
+        itemLayer.push(item);
+
+        return [...layers.AREA, ...layers.NORMAL];
+    }
+
+    function sortItems(items: SvgItem[]) {
+        const layers = constructLayers(items);
+
+        layers.AREA.sort((a, b) => a.order < b.order ? -1 : 1);
+        layers.NORMAL.sort((a, b) => a.order < b.order ? -1 : 1);
+
+        return [...layers.AREA, ...layers.NORMAL];
     }
 
     function applySeatPatch(patch: SeatPatch) {
@@ -661,13 +800,10 @@ export const makeSvgDrawerContext = () => {
         items,
         itemsArray,
         removed_ids,
+        bringToFront,
         centerPan,
         zoomToFit,
-        //setItems,
-        focusedItemIndex,
-        setFocusedItemIndex,
-        focusedSeatIndex,
-        setFocusedSeatIndex,
+        focusedItem, setFocusedItem,
         zoom, setZoom,
         panX, setPanX,
         panY, setPanY,
