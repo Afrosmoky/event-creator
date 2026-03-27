@@ -1,10 +1,9 @@
-import { batch, createEffect, createSignal, Match, Switch, untrack } from "solid-js";
-import { SEAT_RADIUS, SvgItemType, type SvgItem } from "./SvgItem";
+import { createSignal, Match, Switch } from "solid-js";
+import { SvgItemType, type SvgItem } from "./SvgItem";
 import { SvgItemTable } from "./SvgItemTable";
 import { useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { SvgItemIcon } from "./SvgItemIcon";
 import { SvgItemTableCircle } from "./SvgItemTableCircle";
-import { TableSeat } from "./TableSeat";
 import { SvgItemText } from "./SvgItemText";
 import { SvgItemArea } from "./SvgItemArea";
 
@@ -21,15 +20,16 @@ export function SvgItemFactory(
     let [lastMouseY, setLastMouseY] = createSignal(0);
 
     function onContainerPointerDown(e: PointerEvent) {
-        e.stopPropagation();
         e.preventDefault();
 
         context.bringToFront(props.item.id);
-        context.setFocusedItem({ id: props.item.id });
+        context.setFocusedItem({ id: props.item.id, props: { pointerEvent: e } });
+
         if(props.item.position_locked) {
-            console.warn(`Item is position locked!`);
             return;
         }
+
+        e.stopPropagation();
 
         const target = e.target as SVGGElement;
         target.setPointerCapture(e.pointerId);
@@ -51,7 +51,7 @@ export function SvgItemFactory(
 
         const isInContext = context.items[props.item.id];
         if(!isInContext) {
-            console.warn(`Can't find object`)
+            console.warn(`Can't find object`);
             return;
         }
 
