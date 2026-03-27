@@ -1,12 +1,13 @@
 import { useI18nContext } from "@/app/context/I18nContext";
-import { createSignal, For, onCleanup, onMount } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { applyDiff, useSvgDrawerContext } from "@/app/context/SvgDrawerContext";
 import { createPngBlobFromSvg, createSvgBlobFromSvg, openBlobInWindow, saveBlobToFile } from "@/app/utils/svg";
 import { DownloadIcon, ExternalLinkIcon, FileImageIcon, SplineIcon, UsersRound, UsersRoundIcon } from "lucide-solid";
 import { createSvgItemFromBlueprint, deepCloneObj, SvgItems, type SvgItemBlueprint } from "./SvgItem";
 import { SvgIcon } from "./SvgItemIcon";
 import API from "@/app/api/API";
-import PropertyInput from "./PropertyInput";
+import { Portal } from "solid-js/web";
+import { createStore, produce } from "solid-js/store";
 
 interface SideMenuItem {
     blueprint: SvgItemBlueprint,
@@ -260,6 +261,12 @@ const config: SideMenuConfig = {
     ]
 };
 
+interface DraggingState {
+    x: number,
+    y: number,
+    item: SideMenuItem | null
+}
+
 export function AppBottomMenu(props: {
     ballroom_id: string
 }) {
@@ -371,17 +378,74 @@ export function AppBottomMenu(props: {
         });
     }
 
-    function createNewItem(blueprint: SvgItemBlueprint, overwrite?: any) {
+    function createNewItem(blueprint: SvgItemBlueprint, overwrite?: any, position?: { x: number, y: number }) {
         let item = createSvgItemFromBlueprint(blueprint);
         if(overwrite) {
             applyDiff(item, overwrite);
         }
 
-        item.x = -canvas.panX() / canvas.zoom();
-        item.y = -canvas.panY() / canvas.zoom();
+        item.x = position ? position.x : -canvas.panX() / canvas.zoom();
+        item.y = position ? position.y : -canvas.panY() / canvas.zoom();
 
         item = canvas.addItem(undefined, item);
         canvas.setFocusedItem({ id: item.id });
+    }
+
+    const [draggingState, setDraggingState] = createStore<DraggingState>({ x: 0, y: 0, item: null });
+    let dragStartPosition = { x: 0, y: 0 };
+
+    function onIconPointerDown(event: PointerEvent, item: SideMenuItem) {
+        const target = event.currentTarget as HTMLElement;
+        target.setPointerCapture(event.pointerId);
+
+        event.preventDefault();
+        dragStartPosition = { x: event.clientX, y: event.clientY };
+    }
+
+    function onIconPointerMove(event: PointerEvent, item: SideMenuItem) {
+        const target = event.currentTarget as HTMLElement;
+        if (!target.hasPointerCapture(event.pointerId)) return;
+
+        event.preventDefault();
+
+        if(!draggingState.item) {
+            const deltaX = event.clientX - dragStartPosition.x;
+            const deltaY = event.clientY - dragStartPosition.y;
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+            if(distance < 10) {
+                return;
+            }
+
+            setDraggingState(produce(state => {
+                state.x = event.clientX;
+                state.y = event.clientY;
+                state.item = item;
+            }));
+        } else {
+            setDraggingState("x", event.clientX);
+            setDraggingState("y", event.clientY);
+        }
+    }
+
+    function onIconPointerUp(event: PointerEvent, item: SideMenuItem) {
+        const target = event.currentTarget as HTMLElement;
+        if(target.hasPointerCapture(event.pointerId)) {
+            target.releasePointerCapture(event.pointerId);
+
+            if(!draggingState.item) {
+                createNewItem(item.blueprint, item.overwrite);
+            } else {
+                const zoom = canvas.zoom();
+                const mouseWorldX = (event.clientX - canvas.clientWidth() / 2 - canvas.panX()) / zoom;
+                const mouseWorldY = (event.clientY - canvas.clientHeight() / 2 - canvas.panY()) / zoom;
+
+                createNewItem(item.blueprint, item.overwrite, { x: mouseWorldX, y: mouseWorldY });
+            }
+        }
+
+        event.preventDefault();
+        setDraggingState("item", null);
     }
 
     return (
@@ -403,8 +467,11 @@ export function AppBottomMenu(props: {
                                 <For each={group.items}>
                                     {item => (
                                         <button 
-                                            class="p-4 rounded-md bg-background border border-border flex justify-center cursor-pointer"
-                                            on:click={() => createNewItem(item.blueprint, item.overwrite)}
+                                            class="p-4 rounded-md bg-background border border-border flex justify-center cursor-pointer touch-none"
+                                            on:pointerdown={(event) => onIconPointerDown(event, item)}
+                                            on:pointermove={(event) => onIconPointerMove(event, item)}
+                                            on:pointercancel={(event) => onIconPointerUp(event, item)}
+                                            on:pointerup={(event) => onIconPointerUp(event, item)}
                                         >
                                             <SvgIcon icon={item.icon} width={32} height={32} />
                                         </button>
@@ -415,6 +482,19 @@ export function AppBottomMenu(props: {
                     )}
                 </For>
             </div>
+            <Show when={draggingState.item}>
+                <Portal>
+                    <div 
+                        class="absolute pointer-events-none z-50 -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                            "left": draggingState.x + "px",
+                            "top": draggingState.y + "px"
+                        }}
+                    >
+                        <SvgIcon icon={draggingState.item.icon} width={48} height={48} />
+                    </div>
+                </Portal>
+            </Show>
             <div class="flex flex-col gap-2">
                 <div class="relative" ref={exportControlDOM}>
                     <button 
