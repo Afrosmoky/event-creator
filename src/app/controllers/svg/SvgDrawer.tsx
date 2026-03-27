@@ -44,13 +44,17 @@ export function SvgDrawer(
     function onPointerDown(e: PointerEvent) {
         const target = e.currentTarget as SVGSVGElement;
 
-        //e.stopPropagation();
         e.preventDefault();
         target.setPointerCapture(e.pointerId);
 
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         
+        const focusedItem = context.focusedItem();
+        if(focusedItem && focusedItem.props.pointerEvent === e) {
+            return;
+        }
+
         context.setFocusedItem(null);
     }
 
