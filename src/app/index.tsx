@@ -17,11 +17,12 @@ let DEV = false;
 
 export function App() {
 	const searchParams = new URLSearchParams(window.location.search);
-	const ballroomParam = searchParams.get("ballroom");
+	const ballroomFromIndex = window.__APP_CONTEXT__?.ballroomId;
+	const ballroomFromQuery = searchParams.get("ballroom");
 
 	const ballroomId = createMemo(() => {
-		return ballroomParam || "1";
-	})
+		return ballroomFromIndex || ballroomFromQuery || "1";
+	});
 
 	const [showGuestList, setShowGuestList] = createSignal(false);
 	const canvas = useSvgDrawerContext();
